@@ -1,11 +1,5 @@
 # please add new terms from here
-# 1. ignore all Word files
-*.doc
-*.docx
-*.docm
-*.dot
-*.dotx
-~$*.doc*
+personal_file/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
