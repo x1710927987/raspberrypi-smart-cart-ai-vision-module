@@ -10,7 +10,7 @@ if str(ROOT) not in sys.path:
 
 
 from perception.runtime import ControlCommand
-from io.protocol import (
+from io_camera.protocol import (
     encode_status,
     decode_status,
     verify,

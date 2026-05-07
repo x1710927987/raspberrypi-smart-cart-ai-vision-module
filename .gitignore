@@ -1,5 +1,7 @@
 # please add new terms from here
 personal_file/
+.vscode/
+cache/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
