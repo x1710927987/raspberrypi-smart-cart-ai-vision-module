@@ -1,0 +1,123 @@
+# Recommended public sources for the smart-cart perception dataset.
+# Before downloading, verify each license against the project usage scope.
+
+sources:
+  - name: roboflow_universe_pothole
+    priority: high
+    task: hazard
+    target_labels:
+      - pothole
+      - negative
+    access: roboflow_account_and_api_key
+    url: https://universe.roboflow.com/
+    suggested_queries:
+      - pothole detection images>300
+      - road damage pothole object detection
+      - sidewalk pothole
+    notes:
+      - Prefer datasets with YOLO or COCO exports and clear license fields.
+      - Record exact project URL, version, image count, and license in sources.yaml before import.
+
+  - name: roboflow_universe_traffic_light
+    priority: high
+    task: traffic_light
+    target_labels:
+      - red
+      - yellow
+      - green
+      - off
+      - unknown
+    access: roboflow_account_and_api_key
+    url: https://universe.roboflow.com/
+    suggested_queries:
+      - traffic light detection red green yellow images>500
+      - traffic signal detection yolov8
+      - small traffic light detection
+    notes:
+      - Use class mapping to collapse source labels into schema states.
+      - Keep negative or unclear samples in data/raw/traffic_light/negative.
+
+  - name: bosch_small_traffic_lights
+    priority: high
+    task: traffic_light
+    target_labels:
+      - red
+      - yellow
+      - green
+      - off
+    access: direct_download_large_files
+    url: https://zenodo.org/records/12706046
+    license: non-commercial
+    size_notes:
+      - dataset_train_rgb.zip is about 6.2 GB
+      - dataset_test_rgb.zip is about 12.2 GB
+      - full record is much larger
+    notes:
+      - Good for traffic-light detection, but not production use.
+      - Confirm non-commercial project scope before training with it.
+
+  - name: sjtu_s2tld
+    priority: medium
+    task: traffic_light
+    target_labels:
+      - red
+      - yellow
+      - green
+      - off
+    access: github_links_to_cloud_storage
+    url: https://github.com/Thinklab-SJTU/S2TLD
+    license: MIT repository license
+    notes:
+      - Dataset is distributed via Baidu Drive, OneDrive, and Hugging Face links listed in the repository.
+      - Verify dataset file license and citation requirements before use.
+
+  - name: bdd100k
+    priority: high
+    task: objects_laneseg
+    target_labels:
+      - pedestrian
+      - bicycle
+      - car
+      - scooter
+      - traffic_light
+      - drivable_area
+      - lane
+    access: manual_download_or_kaggle
+    url: https://github.com/bdd100k/bdd100k
+    notes:
+      - Strong candidate for objects and drivable-area/lane related pretraining.
+      - Original data normally requires manual download/terms acceptance.
+      - Some mirrors exist on Kaggle; verify they are suitable for your license constraints.
+
+  - name: cityscapes
+    priority: medium
+    task: laneseg_objects
+    target_labels:
+      - sidewalk
+      - road
+      - person
+      - bicycle
+      - car
+    access: registration_required
+    url: https://www.cityscapes-dataset.com/
+    license: research_only
+    notes:
+      - Registration and manual account activation may be required.
+      - Useful for semantic segmentation but has urban-road viewpoint bias.
+
+  - name: mapillary_vistas
+    priority: medium
+    task: laneseg_objects
+    target_labels:
+      - sidewalk
+      - road
+      - person
+      - bicycle
+      - car
+      - traffic_sign
+    access: account_or_dataset_host_required
+    url: https://www.mapillary.com/dataset/vistas
+    license: cc-by-nc-sa
+    notes:
+      - Large and diverse street-level segmentation dataset.
+      - Check Mapillary terms and attribution requirements before use.
