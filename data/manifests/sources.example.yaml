@@ -1,0 +1,30 @@
+# Copy this file to sources.yaml when importing real datasets.
+# Keep license and source notes here so future training reports can trace data provenance.
+
+sources:
+  - name: example_roboflow_pothole
+    url: https://example.com/dataset
+    license: ODbL-1.0
+    task: hazard
+    local_path: data/external/example_roboflow_pothole
+    imported_to:
+      images: data/raw/hazard/pothole
+      annotations: data/annotations/hazard
+    class_mapping:
+      pothole: pothole
+    notes: Replace this entry with the real dataset source before importing.
+
+  - name: example_yolo_objects
+    url: https://example.com/yolo-objects
+    license: unknown
+    task: object_detection
+    local_path: data/external/example_yolo_objects
+    imported_to:
+      images: data/raw/objects/images
+      annotations: data/annotations/objects
+    class_mapping:
+      person: pedestrian
+      bicycle: bicycle
+      car: car
+      traffic cone: obstacle
+    notes: Verify license before using for model training.

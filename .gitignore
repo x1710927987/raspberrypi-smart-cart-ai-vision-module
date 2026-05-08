@@ -2,6 +2,10 @@
 personal_file/
 .vscode/
 cache/
+data/external/
+data/raw/**/*
+!data/raw/**/
+!data/raw/**/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
