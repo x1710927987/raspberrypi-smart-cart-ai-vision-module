@@ -1,0 +1,121 @@
+{
+  "schema_version": "0.1",
+  "model_id": "smartcart_objects_yolov8n_roboflow_onnx_v1",
+  "task": "objects",
+  "status": "example",
+  "description": "Example object-detection YOLO manifest for the prepared pedestrian, bicycle, and car dataset exported to ONNX.",
+  "artifact": {
+    "path": "models/weights/smartcart_objects_yolov8n_roboflow_onnx_v1.onnx",
+    "format": "onnx",
+    "architecture": "yolov8n",
+    "version": "v1",
+    "sha256": null,
+    "size_bytes": null
+  },
+  "source": {
+    "training_platform": "ultralytics",
+    "project_url": "replace-with-source-dataset-urls",
+    "dataset_manifest": "data/processed/objects_yolo_v1/data.yaml",
+    "dataset_version": "objects_yolo_v1",
+    "license": "replace-with-real-license",
+    "exported_at": "YYYY-MM-DD"
+  },
+  "runtime": {
+    "preferred_backend": "onnxruntime",
+    "fallback_backend": "opencv_dnn",
+    "target_device": "raspberry_pi",
+    "min_fps": 5.0
+  },
+  "preprocessing": {
+    "input_color_space": "rgb",
+    "resize": {
+      "width": 640,
+      "height": 640,
+      "keep_aspect_ratio": true,
+      "padding_value": 114
+    },
+    "normalize": {
+      "enabled": true,
+      "scale": 0.00392156862745098,
+      "mean": [0.0, 0.0, 0.0],
+      "std": [1.0, 1.0, 1.0]
+    }
+  },
+  "onnx": {
+    "opset": 12,
+    "input_tensors": [
+      {
+        "name": "images",
+        "shape": [1, 3, 640, 640],
+        "dtype": "float32"
+      }
+    ],
+    "output_tensors": [
+      {
+        "name": "output0",
+        "shape": [1, 7, 8400],
+        "dtype": "float32"
+      }
+    ],
+    "execution_providers": [
+      "CPUExecutionProvider"
+    ]
+  },
+  "tflite": {
+    "enabled": false,
+    "input_tensor_index": null,
+    "output_tensor_indices": [],
+    "quantization": null,
+    "delegate": null
+  },
+  "postprocessing": {
+    "confidence_threshold": 0.35,
+    "nms_iou_threshold": 0.45,
+    "max_detections": 50,
+    "bbox_format": "xyxy_pixels",
+    "bbox_coordinate_space": "original_image"
+  },
+  "model_classes": [
+    "pedestrian",
+    "bicycle",
+    "car"
+  ],
+  "schema_mapping": {
+    "pedestrian": "pedestrian",
+    "bicycle": "bicycle",
+    "car": "car"
+  },
+  "schema_labels": {
+    "objects": [
+      "pedestrian",
+      "obstacle",
+      "bicycle",
+      "car",
+      "animal",
+      "stroller",
+      "wheelchair",
+      "bollard",
+      "scooter",
+      "unknown"
+    ]
+  },
+  "evaluation": {
+    "dataset_split": "data/processed/objects_yolo_v1/test/images",
+    "metrics": {
+      "map50": null,
+      "map50_95": null,
+      "precision": null,
+      "recall": null,
+      "latency_ms": null
+    }
+  },
+  "integration": {
+    "perception_module": "perception.detection",
+    "expected_output": "list[perception.runtime.ObjectBBox]",
+    "notes": [
+      "This baseline currently covers pedestrian, bicycle, and car only.",
+      "Add obstacle, stroller, wheelchair, scooter, and other schema classes only after collecting enough labeled data.",
+      "Run tools/check_model_manifest.py before enabling a trained artifact in the camera pipeline."
+    ]
+  }
+}

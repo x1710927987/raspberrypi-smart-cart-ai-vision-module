@@ -1,0 +1,18 @@
+# Traffic-light YOLO v1 baseline training config.
+# This is a flat YAML file so tools/train_traffic_light_yolo.py can parse it without extra dependencies.
+
+data: data/external/roboflow_traffic_light_v1_split/data.yaml
+model: models/weights/yolov8n.pt
+epochs: 100
+imgsz: 640
+batch: 16
+device: null
+workers: 4
+patience: 30
+seed: 42
+project: models/training/traffic_light_yolo_v1
+name: smartcart_traffic_light_yolov8n_roboflow_v1
+exist_ok: false
+export_format: "none"
+manifest_template: models/model_manifest.traffic_light.example.json
+notes: Traffic-light YOLO v1 baseline.

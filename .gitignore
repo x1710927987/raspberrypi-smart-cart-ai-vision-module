@@ -3,9 +3,28 @@ personal_file/
 .vscode/
 cache/
 data/external/
+data/processed/**/*
+!data/processed/
+!data/processed/**/
+!data/processed/**/.gitkeep
 data/raw/**/*
 !data/raw/**/
 !data/raw/**/.gitkeep
+data/annotations/**/*.json
+data/annotations/laneseg/masks/**/*
+!data/annotations/laneseg/masks/
+!data/annotations/laneseg/masks/.gitkeep
+
+# Model artifacts and local training outputs
+*.pt
+*.onnx
+*.tflite
+*.engine
+*.bin
+models/training/*/*/
+models/weights/**/*
+!models/weights/
+!models/weights/.gitkeep
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,0 +1,19 @@
+# Object-detection YOLO v1 baseline training config.
+# Run tools/export_objects_yolo_dataset.py before training to generate data/processed/objects_yolo_v1.
+
+data: data/processed/objects_yolo_v1/data.yaml
+model: models/weights/yolov8n.pt
+epochs: 100
+imgsz: 640
+batch: 16
+device: null
+workers: 4
+patience: 30
+seed: 42
+project: models/training/object_detection_yolo_v1
+name: smartcart_objects_yolov8n_roboflow_v1
+exist_ok: false
+plots: true
+export_format: "none"
+manifest_template: models/model_manifest.objects.example.json
+notes: Object-detection YOLO v1 baseline for pedestrian, bicycle, and car.

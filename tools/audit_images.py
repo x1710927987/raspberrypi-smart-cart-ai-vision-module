@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 import cv2
+import numpy as np
 
 
 IMAGE_EXTENSIONS = {".bmp", ".jpg", ".jpeg", ".png", ".webp"}
@@ -24,7 +25,7 @@ def audit_images(root: Path) -> dict[str, Any]:
             continue
         if path.suffix.lower() not in IMAGE_EXTENSIONS:
             continue
-        image = cv2.imread(str(path), cv2.IMREAD_UNCHANGED)
+        image = _read_image(path)
         if image is None or image.size == 0:
             unreadable.append(str(path))
             continue
@@ -51,6 +52,16 @@ def _sha256(path: Path) -> str:
         for chunk in iter(lambda: file.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+def _read_image(path: Path):
+    try:
+        data = np.fromfile(str(path), dtype=np.uint8)
+    except OSError:
+        return None
+    if data.size == 0:
+        return None
+    return cv2.imdecode(data, cv2.IMREAD_UNCHANGED)
 
 
 def main() -> int:

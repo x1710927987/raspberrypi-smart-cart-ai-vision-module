@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import cv2
+import numpy as np
 
 
 IMAGE_EXTENSIONS = {".bmp", ".jpg", ".jpeg", ".png", ".webp"}
@@ -99,7 +100,7 @@ def _check_images(data_root: Path, report: ValidationReport) -> None:
         if image_path.suffix.lower() not in IMAGE_EXTENSIONS:
             report.warn(f"ignored non-image file under raw data: {image_path}")
             continue
-        image = cv2.imread(str(image_path), cv2.IMREAD_UNCHANGED)
+        image = _read_image(image_path)
         if image is None or image.size == 0:
             report.error(f"unreadable image: {image_path}")
             continue
@@ -219,6 +220,16 @@ def _print_report(report: ValidationReport) -> None:
     for error in report.errors:
         print(f"ERROR: {error}")
     print("status=ok" if report.ok else "status=failed")
+
+
+def _read_image(path: Path):
+    try:
+        data = np.fromfile(str(path), dtype=np.uint8)
+    except OSError:
+        return None
+    if data.size == 0:
+        return None
+    return cv2.imdecode(data, cv2.IMREAD_UNCHANGED)
 
 
 def main() -> int:

@@ -29,6 +29,8 @@ data/
     hazard/                         # Optional JSON annotations for hazard classification/detection
   manifests/
     sources.example.yaml            # Dataset source/license/provenance template
+  processed/
+    objects_yolo_v1/                # Generated Ultralytics training dataset, ignored by Git
   splits/
     train.txt
     val.txt
@@ -167,6 +169,59 @@ The YOLO class map is a JSON object from source classes or source class indices 
   "traffic cone": "obstacle"
 }
 ```
+
+For Roboflow-style YOLO datasets that already contain `data.yaml`, use the newer generic import flow. First audit the dataset:
+
+```powershell
+python tools/audit_yolo_dataset.py --root data/external/roboflow_pedestrian_v1 --class-map person=pedestrian
+python tools/audit_yolo_dataset.py --root data/external/roboflow_vehicle_v1 --class-map bike=bicycle --class-map car=car
+python tools/audit_yolo_dataset.py --root data/external/roboflow_sidewalk_v1 --class-map sidewalk=sidewalk
+```
+
+If the dataset only has `train/`, create a deterministic train/valid/test copy:
+
+```powershell
+python tools/split_yolo_dataset.py `
+  --source-root data/external/roboflow_pedestrian_v1 `
+  --output-root data/external/roboflow_pedestrian_v1_split `
+  --ratios 0.7,0.2,0.1 `
+  --seed 42
+```
+
+Then import mapped object-detection labels:
+
+```powershell
+python tools/import_perception_yolo_dataset.py `
+  --dataset-root data/external/roboflow_pedestrian_v1_split `
+  --task objects `
+  --class-map person=pedestrian `
+  --prefix roboflow_pedestrian_v1
+
+python tools/import_perception_yolo_dataset.py `
+  --dataset-root data/external/roboflow_vehicle_v1_split `
+  --task objects `
+  --class-map bike=bicycle `
+  --class-map car=car `
+  --prefix roboflow_vehicle_v1
+```
+
+For YOLO segmentation labels, import binary masks for the lane/sidewalk segmentation task:
+
+```powershell
+python tools/import_perception_yolo_dataset.py `
+  --dataset-root data/external/roboflow_sidewalk_v1_split `
+  --task laneseg `
+  --class-map sidewalk=sidewalk `
+  --prefix roboflow_sidewalk_v1
+```
+
+After importing object datasets, export the combined project annotations back to a YOLO training layout:
+
+```powershell
+python tools/export_objects_yolo_dataset.py --overwrite
+```
+
+This generated dataset is intentionally placed under `data/processed/` and ignored by Git.
 
 Extract frames from locally recorded video:
 

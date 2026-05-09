@@ -9,13 +9,19 @@ __all__ = [
     "FrameProvider",
     "FusionConfig",
     "HAZARD_TYPES",
+    "FixedPredictionBackend",
     "Hazard",
     "HazardCandidate",
     "HazardDetectionConfig",
     "LaneSeg",
     "LaneSegConfig",
     "LaneSegMask",
+    "ManifestHazardDetector",
+    "ManifestLaneSegmenter",
+    "ManifestObjectDetector",
+    "ManifestTrafficLightClassifier",
     "MockPerceptionRuntime",
+    "ModelManifest",
     "ModelDetection",
     "OBJECT_CLASSES",
     "ObjectBBox",
@@ -30,10 +36,12 @@ __all__ = [
     "TRAFFIC_LIGHT_STATES",
     "TrafficLight",
     "TrafficLightDetectionConfig",
+    "build_provider_from_manifest",
     "fuse_perception",
     "list_mock_scenarios",
     "make_mock_perception",
     "map_model_class",
+    "load_model_manifest",
     "postprocess_detections",
     "preprocess_frame",
     "validate_perception_output",
@@ -75,4 +83,15 @@ def __getattr__(name: str):
         return getattr(import_module("perception.laneseg"), name)
     if name in {"HazardCandidate", "HazardDetectionConfig", "RuleBasedHazardDetector"}:
         return getattr(import_module("perception.hazard"), name)
+    if name in {
+        "FixedPredictionBackend",
+        "ManifestHazardDetector",
+        "ManifestLaneSegmenter",
+        "ManifestObjectDetector",
+        "ManifestTrafficLightClassifier",
+        "ModelManifest",
+        "build_provider_from_manifest",
+        "load_model_manifest",
+    }:
+        return getattr(import_module("perception.model_inference"), name)
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
