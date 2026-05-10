@@ -44,7 +44,7 @@ class UltralyticsBackend:
         self._yolo_class = yolo_class
         self._model: Any | None = None
 
-    def predict(self, frame: np.ndarray, preprocess_result: PreprocessResult | None, manifest: ModelManifest) -> list[dict[str, Any]]:
+    def predict(self, frame: np.ndarray, preprocess_result: PreprocessResult | None, manifest: ModelManifest) -> Any:
         model = self._load_model(manifest)
         kwargs: dict[str, Any] = {
             "verbose": False,
@@ -53,6 +53,8 @@ class UltralyticsBackend:
         if self.device:
             kwargs["device"] = self.device
         results = model.predict(frame, **kwargs)
+        if manifest.task == "laneseg":
+            return _ultralytics_results_to_laneseg(results, manifest)
         return _ultralytics_results_to_detections(results, manifest)
 
     def _load_model(self, manifest: ModelManifest) -> Any:
@@ -89,6 +91,36 @@ def _ultralytics_results_to_detections(results: Any, manifest: ModelManifest) ->
                 }
             )
     return detections[: manifest.max_detections]
+
+
+def _ultralytics_results_to_laneseg(results: Any, manifest: ModelManifest) -> dict[str, Any] | None:
+    mask_class = str(manifest.postprocessing.get("mask_class", "")).strip()
+    mask_id = int(manifest.postprocessing.get("mask_id", 1))
+    best_conf = -1.0
+    best_class_id: int | None = None
+    for result in _as_result_list(results):
+        if getattr(result, "masks", None) is None:
+            continue
+        boxes = getattr(result, "boxes", None)
+        if boxes is None:
+            continue
+        for index in range(_box_count(boxes)):
+            class_id = int(round(_item_value(getattr(boxes, "cls"), index)))
+            label = manifest.class_name(class_id)
+            if mask_class and label != mask_class:
+                continue
+            conf = float(_item_value(getattr(boxes, "conf"), index))
+            if conf > best_conf:
+                best_conf = conf
+                best_class_id = class_id
+    if best_class_id is None:
+        return None
+    return {
+        "mask_id": mask_id,
+        "class_id": best_class_id,
+        "label": manifest.class_name(best_class_id),
+        "confidence": best_conf,
+    }
 
 
 def _as_result_list(results: Any) -> list[Any]:

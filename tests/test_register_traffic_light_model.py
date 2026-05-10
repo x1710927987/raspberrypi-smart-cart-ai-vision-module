@@ -67,6 +67,7 @@ def test_register_traffic_light_model_copies_artifact_and_writes_manifest():
     payload = json.loads(result.manifest_path.read_text(encoding="utf-8"))
     assert payload["status"] == "registered"
     assert payload["source"]["training_platform"] == "ultralytics"
+    assert payload["source"]["dataset_manifest"] == "data/external/roboflow_traffic_light_v1_split/data.yaml"
     assert payload["source"]["license"] == "test-license"
     assert payload["source"]["exported_at"] == "2026-05-09"
     assert payload["artifact"]["sha256"] == result.sha256
@@ -99,6 +100,33 @@ def test_register_traffic_light_model_dry_run_does_not_write_outputs(capsys):
     assert "status=dry_run" in captured.out
     assert not result.artifact_path.exists()
     assert not result.manifest_path.exists()
+
+
+def test_register_traffic_light_model_allows_dataset_manifest_override():
+    script = _load_register_script()
+    workspace = REPO_ROOT / "cache" / "pytest" / "test_register_traffic_light_model_dataset_manifest"
+    source_model = workspace / "run" / "weights" / "best.pt"
+    weights_dir = workspace / "weights"
+    manifest_dir = workspace / "manifests"
+    dataset_manifest = REPO_ROOT / "data" / "external" / "traffic_light_combined_v2_split" / "data.yaml"
+    source_model.parent.mkdir(parents=True, exist_ok=True)
+    source_model.write_bytes(b"fake-yolo-weights")
+
+    config = script.RegisterConfig(
+        source_model=source_model,
+        run_dir=workspace / "run",
+        weights_dir=weights_dir,
+        manifest_dir=manifest_dir,
+        model_id="smartcart_traffic_light_yolov8n_dataset_manifest_pt_v1",
+        dataset_manifest=dataset_manifest,
+        dataset_version="traffic_light_combined_v2_split",
+        overwrite=True,
+    )
+    result = script.register_traffic_light_model(config)
+
+    payload = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    assert payload["source"]["dataset_manifest"] == "data/external/traffic_light_combined_v2_split/data.yaml"
+    assert payload["source"]["dataset_version"] == "traffic_light_combined_v2_split"
 
 
 def test_register_traffic_light_model_cli_dry_run(monkeypatch, capsys):

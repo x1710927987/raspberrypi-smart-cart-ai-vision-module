@@ -7,6 +7,8 @@ __all__ = [
     "DummyObjectDetector",
     "EmptyObjectDetector",
     "FrameProvider",
+    "DEFAULT_LANESEG_MANIFEST",
+    "DEFAULT_TRAFFIC_LIGHT_MANIFEST",
     "FusionConfig",
     "HAZARD_TYPES",
     "FixedPredictionBackend",
@@ -36,6 +38,8 @@ __all__ = [
     "TRAFFIC_LIGHT_STATES",
     "TrafficLight",
     "TrafficLightDetectionConfig",
+    "build_default_laneseg_provider",
+    "build_default_traffic_light_provider",
     "build_provider_from_manifest",
     "fuse_perception",
     "list_mock_scenarios",
@@ -75,7 +79,15 @@ def __getattr__(name: str):
         return getattr(import_module("perception.detection"), name)
     if name in {"FusionConfig", "PerceptionFusion", "fuse_perception"}:
         return getattr(import_module("perception.fusion"), name)
-    if name in {"FrameProvider", "PerceptionPipeline", "PipelineConfig"}:
+    if name in {
+        "DEFAULT_LANESEG_MANIFEST",
+        "DEFAULT_TRAFFIC_LIGHT_MANIFEST",
+        "FrameProvider",
+        "PerceptionPipeline",
+        "PipelineConfig",
+        "build_default_laneseg_provider",
+        "build_default_traffic_light_provider",
+    }:
         return getattr(import_module("perception.camera_pipeline"), name)
     if name in {"ColorTrafficLightDetector", "TrafficLightDetectionConfig"}:
         return getattr(import_module("perception.traffic_light"), name)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Optional, Protocol
 
 import numpy as np
@@ -10,6 +11,11 @@ from perception.detection import EmptyObjectDetector, ObjectDetector
 from perception.fusion import FusionConfig, PerceptionFusion
 from perception.preprocessing import PreprocessConfig, PreprocessResult, preprocess_frame
 from perception.runtime import PerceptionOutput
+
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_TRAFFIC_LIGHT_MANIFEST = REPO_ROOT / "models" / "training" / "smartcart_traffic_light_yolov8n_combined_v2_pt_v1.manifest.json"
+DEFAULT_LANESEG_MANIFEST = REPO_ROOT / "models" / "training" / "smartcart_laneseg_yolov8n_seg_roboflow_pt_v1.manifest.json"
 
 
 class FrameProvider(Protocol):
@@ -42,6 +48,28 @@ class PerceptionPipeline:
         self.fusion = fusion or PerceptionFusion(self.config.fusion)
         self.last_preprocess_result: Optional[PreprocessResult] = None
 
+    @classmethod
+    def with_default_traffic_light(
+        cls,
+        *,
+        manifest_path: str | Path = DEFAULT_TRAFFIC_LIGHT_MANIFEST,
+        backend: Any | None = None,
+        device: str | None = None,
+        **kwargs: Any,
+    ) -> "PerceptionPipeline":
+        return cls(traffic_light_provider=build_default_traffic_light_provider(manifest_path=manifest_path, backend=backend, device=device), **kwargs)
+
+    @classmethod
+    def with_default_laneseg(
+        cls,
+        *,
+        manifest_path: str | Path = DEFAULT_LANESEG_MANIFEST,
+        backend: Any | None = None,
+        device: str | None = None,
+        **kwargs: Any,
+    ) -> "PerceptionPipeline":
+        return cls(laneseg_provider=build_default_laneseg_provider(manifest_path=manifest_path, backend=backend, device=device), **kwargs)
+
     def process_frame(self, frame: np.ndarray, *, timestamp: Optional[float] = None, base: Optional[PerceptionOutput] = None) -> PerceptionOutput:
         preprocess_result = preprocess_frame(frame, self.config.preprocess)
         self.last_preprocess_result = preprocess_result
@@ -67,3 +95,27 @@ def _run_provider(provider: Any, method_names: tuple[str, ...], frame: np.ndarra
         if isinstance(method, Callable):
             return method(frame, preprocess_result)
     raise TypeError(f"{provider_name} must be callable or provide one of these methods: {', '.join(method_names)}")
+
+
+def build_default_traffic_light_provider(
+    *,
+    manifest_path: str | Path = DEFAULT_TRAFFIC_LIGHT_MANIFEST,
+    backend: Any | None = None,
+    device: str | None = None,
+) -> Any:
+    from perception.model_inference import ManifestTrafficLightClassifier, UltralyticsBackend, load_model_manifest
+
+    manifest = load_model_manifest(manifest_path, require_artifact=True)
+    return ManifestTrafficLightClassifier(manifest, backend or UltralyticsBackend(device=device))
+
+
+def build_default_laneseg_provider(
+    *,
+    manifest_path: str | Path = DEFAULT_LANESEG_MANIFEST,
+    backend: Any | None = None,
+    device: str | None = None,
+) -> Any:
+    from perception.model_inference import ManifestLaneSegmenter, UltralyticsBackend, load_model_manifest
+
+    manifest = load_model_manifest(manifest_path, require_artifact=True)
+    return ManifestLaneSegmenter(manifest, backend or UltralyticsBackend(device=device))

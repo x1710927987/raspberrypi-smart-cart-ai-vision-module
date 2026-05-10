@@ -53,6 +53,78 @@ def test_create_review_template_from_gallery_index():
     assert csv_rows[0]["action"] == ""
 
 
+def test_create_review_template_carries_previous_review_by_source_image():
+    script = _load_script()
+    workspace = REPO_ROOT / "cache" / "pytest" / "test_create_review_template_carries_previous_review"
+    index_path = workspace / "traffic_light_valid_v1_mistakes_after_label_fix" / "index.json"
+    previous_path = workspace / "previous.csv"
+    output_path = workspace / "review.csv"
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    source_image = "data/external/traffic_light/valid/example.jpg"
+    index_path.write_text(
+        json.dumps(
+            [
+                {
+                    "index": 1,
+                    "status": "rendered",
+                    "image": source_image,
+                    "output": "cache/gallery/0001.jpg",
+                    "gt_states": ["green"],
+                    "primary_gt": "green",
+                    "predicted_state": "unknown",
+                    "confidence": 0.0,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )
+    with previous_path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=script.FIELDNAMES)
+        writer.writeheader()
+        writer.writerow(
+            {
+                "case_id": "valid_0015",
+                "split": "valid",
+                "gallery_image": "cache/old.jpg",
+                "source_image": source_image,
+                "gt_states": "green",
+                "primary_gt": "green",
+                "predicted_state": "unknown",
+                "confidence": "0.0",
+                "status": "rendered",
+                "reason": "missed_detection",
+                "action": "add_similar_data",
+                "priority": "high",
+                "reviewed_by": "A",
+                "notes": "angled traffic light",
+            }
+        )
+
+    rows = script.create_review_template([index_path], output_path, previous_path)
+
+    assert rows[0]["case_id"] == "valid_0001"
+    assert rows[0]["reason"] == "missed_detection"
+    assert rows[0]["action"] == "add_similar_data"
+    assert rows[0]["priority"] == "high"
+    assert rows[0]["notes"] == "angled traffic light"
+
+
+def test_create_review_template_uses_unique_case_ids_for_repeated_split_inputs():
+    script = _load_script()
+    workspace = REPO_ROOT / "cache" / "pytest" / "test_create_review_template_repeated_split"
+    first_index = workspace / "traffic_light_first_test_mistakes" / "index.json"
+    second_index = workspace / "traffic_light_second_test_mistakes" / "index.json"
+    output_path = workspace / "review.csv"
+    first_index.parent.mkdir(parents=True, exist_ok=True)
+    second_index.parent.mkdir(parents=True, exist_ok=True)
+    _write_index(first_index, "data/example1.jpg")
+    _write_index(second_index, "data/example2.jpg")
+
+    rows = script.create_review_template([first_index, second_index], output_path)
+
+    assert [row["case_id"] for row in rows] == ["test_0001", "test_0002"]
+
+
 def test_create_review_template_cli(capsys, monkeypatch):
     script = _load_script()
     workspace = REPO_ROOT / "cache" / "pytest" / "test_create_traffic_light_error_review_template_cli"
@@ -93,3 +165,23 @@ def test_create_review_template_cli(capsys, monkeypatch):
     assert code == 0
     assert "rows=1" in output
     assert output_path.exists()
+
+
+def _write_index(path: Path, image: str) -> None:
+    path.write_text(
+        json.dumps(
+            [
+                {
+                    "index": 1,
+                    "status": "rendered",
+                    "image": image,
+                    "output": "cache/gallery/0001.jpg",
+                    "gt_states": ["green"],
+                    "primary_gt": "green",
+                    "predicted_state": "unknown",
+                    "confidence": 0.0,
+                }
+            ]
+        ),
+        encoding="utf-8",
+    )

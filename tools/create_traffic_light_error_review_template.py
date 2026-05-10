@@ -39,12 +39,14 @@ def create_review_template(
 ) -> list[dict[str, Any]]:
     previous_rows = _load_previous_review(previous_review_path)
     rows: list[dict[str, Any]] = []
+    split_counters: dict[str, int] = {}
     for index_file in index_files:
         path = _resolve_path(Path(index_file))
         split = _infer_split(path)
         items = _load_index(path)
         for item in items:
-            row = _row_from_index_item(item, split=split)
+            split_counters[split] = split_counters.get(split, 0) + 1
+            row = _row_from_index_item(item, split=split, case_index=split_counters[split])
             _carry_previous_review(row, previous_rows)
             rows.append(row)
     rows.sort(key=lambda row: (row["split"], row["case_id"]))
@@ -88,8 +90,8 @@ def _load_index(path: Path) -> list[dict[str, Any]]:
     return items
 
 
-def _row_from_index_item(item: dict[str, Any], *, split: str) -> dict[str, Any]:
-    case_id = f"{split}_{int(item.get('index', 0)):04d}"
+def _row_from_index_item(item: dict[str, Any], *, split: str, case_index: int | None = None) -> dict[str, Any]:
+    case_id = f"{split}_{int(case_index if case_index is not None else item.get('index', 0)):04d}"
     gt_states = item.get("gt_states", [])
     if isinstance(gt_states, list):
         gt_text = "|".join(str(value) for value in gt_states)

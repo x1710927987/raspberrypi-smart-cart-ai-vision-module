@@ -1,0 +1,18 @@
+# Traffic-light YOLO v2 training config.
+# Uses Roboflow traffic-light data plus reviewed add-similar-data augmentation.
+
+data: data/external/traffic_light_combined_v2_split/data.yaml
+model: models/weights/yolov8n.pt
+epochs: 50
+imgsz: 640
+batch: 16
+device: null
+workers: 4
+patience: 20
+seed: 42
+project: models/training/traffic_light_yolo_v2
+name: smartcart_traffic_light_yolov8n_combined_v2
+exist_ok: false
+export_format: "none"
+manifest_template: models/model_manifest.traffic_light.example.json
+notes: Traffic-light YOLO v2 trained on Roboflow split plus reviewed add-similar-data samples.

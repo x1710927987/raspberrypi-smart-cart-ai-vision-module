@@ -17,7 +17,7 @@ from perception.model_inference import ManifestTrafficLightClassifier, Ultralyti
 from perception.runtime import TrafficLight
 
 
-DEFAULT_MANIFEST = REPO_ROOT / "models" / "training" / "smartcart_traffic_light_yolov8n_smoke_pt_v1.manifest.json"
+DEFAULT_MANIFEST = REPO_ROOT / "models" / "training" / "smartcart_traffic_light_yolov8n_combined_v2_pt_v1.manifest.json"
 
 
 def predict_traffic_light(

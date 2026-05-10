@@ -28,6 +28,15 @@ def test_load_default_traffic_light_yolo_config():
     assert config.export_format == "none"
 
 
+def test_load_traffic_light_yolo_v2_config():
+    script = _load_train_script()
+    config = script.load_train_config(REPO_ROOT / "models" / "training" / "traffic_light_yolo_v2.yaml")
+    assert config.data == REPO_ROOT / "data" / "external" / "traffic_light_combined_v2_split" / "data.yaml"
+    assert config.epochs == 50
+    assert config.project == REPO_ROOT / "models" / "training" / "traffic_light_yolo_v2"
+    assert config.name == "smartcart_traffic_light_yolov8n_combined_v2"
+
+
 def test_validate_config_rejects_missing_data():
     script = _load_train_script()
     config = script.TrainConfig(data=REPO_ROOT / "data" / "external" / "missing_dataset" / "data.yaml")

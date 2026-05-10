@@ -91,6 +91,17 @@ def test_ultralytics_backend_plugs_into_traffic_light_provider():
     assert provider.detect(np.zeros((96, 96, 3), dtype=np.uint8)) == TrafficLight("red", 0.86)
 
 
+def test_ultralytics_backend_converts_segmentation_result_to_laneseg():
+    manifest = _manifest(
+        task="laneseg",
+        classes=["sidewalk"],
+        postprocessing={"confidence_threshold": 0.35, "mask_id": 7, "mask_class": "sidewalk"},
+    )
+    backend = UltralyticsBackend(yolo_class=_fake_yolo_class(class_ids=[0], confidences=[0.74], boxes=[[1, 2, 30, 40]], has_masks=True))
+    provider = ManifestLaneSegmenter(manifest, backend)
+    assert provider.segment(np.zeros((96, 96, 3), dtype=np.uint8)) == LaneSeg(7, 0.74)
+
+
 def test_manifest_validation_rejects_bad_task_and_bad_schema_label():
     bad_task = _manifest(task="classification", validate=False)
     with pytest.raises(ValueError, match="unsupported model task"):
@@ -123,20 +134,21 @@ def _manifest(*, task, classes=None, mapping=None, postprocessing=None, validate
     return manifest
 
 
-def _fake_yolo_class(*, class_ids, confidences, boxes):
+def _fake_yolo_class(*, class_ids, confidences, boxes, has_masks=False):
     class FakeYOLO:
         def __init__(self, model_path):
             self.model_path = model_path
 
         def predict(self, frame, **kwargs):
-            return [_FakeResult(class_ids, confidences, boxes)]
+            return [_FakeResult(class_ids, confidences, boxes, has_masks=has_masks)]
 
     return FakeYOLO
 
 
 class _FakeResult:
-    def __init__(self, class_ids, confidences, boxes):
+    def __init__(self, class_ids, confidences, boxes, *, has_masks=False):
         self.boxes = _FakeBoxes(class_ids, confidences, boxes)
+        self.masks = _FakeMasks() if has_masks else None
 
 
 class _FakeBoxes:
@@ -144,3 +156,7 @@ class _FakeBoxes:
         self.cls = class_ids
         self.conf = confidences
         self.xyxy = boxes
+
+
+class _FakeMasks:
+    data = [[[1]]]

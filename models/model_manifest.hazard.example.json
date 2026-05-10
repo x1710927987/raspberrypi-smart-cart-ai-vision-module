@@ -1,0 +1,119 @@
+{
+  "schema_version": "0.1",
+  "model_id": "smartcart_hazard_yolov8n_roboflow_pt_v1",
+  "task": "hazard",
+  "status": "example",
+  "description": "Example hazard-detection manifest for a YOLO model.",
+  "artifact": {
+    "path": "models/weights/smartcart_hazard_yolov8n_roboflow_pt_v1.pt",
+    "format": "pt",
+    "architecture": "yolov8n",
+    "version": "v1",
+    "sha256": null,
+    "size_bytes": null
+  },
+  "source": {
+    "training_platform": "roboflow",
+    "project_url": "https://universe.roboflow.com/example/project",
+    "dataset_manifest": "data/external/roboflow_hazard_v1_split/data.yaml",
+    "dataset_version": "replace-with-real-version",
+    "license": "replace-with-real-license",
+    "exported_at": "YYYY-MM-DD"
+  },
+  "runtime": {
+    "preferred_backend": "ultralytics",
+    "fallback_backend": null,
+    "target_device": "raspberry_pi",
+    "min_fps": 5.0
+  },
+  "preprocessing": {
+    "input_color_space": "rgb",
+    "resize": {
+      "width": 640,
+      "height": 640,
+      "keep_aspect_ratio": true,
+      "padding_value": 114
+    },
+    "normalize": {
+      "enabled": true,
+      "scale": 0.00392156862745098,
+      "mean": [0.0, 0.0, 0.0],
+      "std": [1.0, 1.0, 1.0]
+    }
+  },
+  "postprocessing": {
+    "confidence_threshold": 0.35,
+    "nms_iou_threshold": 0.45,
+    "max_detections": 20,
+    "bbox_format": "xyxy_pixels",
+    "bbox_coordinate_space": "original_image"
+  },
+  "model_classes": [
+    "pothole",
+    "step_up",
+    "step_down",
+    "speed_bump",
+    "water",
+    "debris"
+  ],
+  "schema_mapping": {
+    "pothole": "pothole",
+    "step_up": "step_up",
+    "step-down": "step_down",
+    "step_down": "step_down",
+    "speed_bump": "speed_bump",
+    "speed bump": "speed_bump",
+    "water": "water",
+    "debris": "debris"
+  },
+  "schema_labels": {
+    "objects": [
+      "pedestrian",
+      "obstacle",
+      "bicycle",
+      "car",
+      "animal",
+      "stroller",
+      "wheelchair",
+      "bollard",
+      "scooter",
+      "unknown"
+    ],
+    "traffic_light": [
+      "red",
+      "yellow",
+      "green",
+      "off",
+      "flashing",
+      "unknown"
+    ],
+    "hazard": [
+      "pothole",
+      "step_up",
+      "step_down",
+      "speed_bump",
+      "water",
+      "debris",
+      "unknown"
+    ]
+  },
+  "evaluation": {
+    "dataset_split": "data/external/roboflow_hazard_v1_split/test/images",
+    "metrics": {
+      "map50": null,
+      "map50_95": null,
+      "precision": null,
+      "recall": null,
+      "latency_ms": null
+    }
+  },
+  "integration": {
+    "perception_module": "perception.hazard",
+    "expected_output": "perception.runtime.Hazard",
+    "notes": [
+      "Replace example paths and classes before using this manifest.",
+      "The current provider returns the highest-confidence hazard class from YOLO detections.",
+      "Collect negative clean-sidewalk images separately to control false braking risk."
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+# Hazard YOLO v1 baseline training config.
+# Expected data layout: data/external/roboflow_hazard_v1_split/{train,valid,test}/{images,labels}.
+
+data: data/external/roboflow_hazard_v1_split/data.yaml
+model: models/weights/yolov8n.pt
+epochs: 100
+imgsz: 640
+batch: 16
+device: null
+workers: 4
+patience: 30
+seed: 42
+project: models/training/hazard_yolo_v1
+name: smartcart_hazard_yolov8n_roboflow_v1
+exist_ok: false
+plots: true
+export_format: "none"
+manifest_template: models/model_manifest.hazard.example.json
+notes: Hazard YOLO v1 baseline for pothole, steps, speed bump, water, and debris.

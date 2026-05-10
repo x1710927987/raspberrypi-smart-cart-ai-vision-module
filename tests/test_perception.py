@@ -3,11 +3,19 @@ import numpy as np
 import pytest
 
 from perception import make_mock_perception, validate_perception_output
-from perception.camera_pipeline import PerceptionPipeline, PipelineConfig
+from perception.camera_pipeline import (
+    DEFAULT_LANESEG_MANIFEST,
+    DEFAULT_TRAFFIC_LIGHT_MANIFEST,
+    PerceptionPipeline,
+    PipelineConfig,
+    build_default_laneseg_provider,
+    build_default_traffic_light_provider,
+)
 from perception.detection import DetectionConfig, DummyObjectDetector, ModelDetection, postprocess_detections
 from perception.fusion import FusionConfig, PerceptionFusion, fuse_perception
 from perception.hazard import HazardDetectionConfig, RuleBasedHazardDetector
 from perception.laneseg import LaneSegConfig, RuleBasedLaneSegmenter
+from perception.model_inference import FixedPredictionBackend
 from perception.preprocessing import PreprocessConfig, preprocess_frame
 from perception.runtime import Hazard, LaneSeg, ObjectBBox, PerceptionOutput, TrafficLight
 from perception.traffic_light import ColorTrafficLightDetector, TrafficLightDetectionConfig
@@ -144,6 +152,20 @@ def test_pipeline_supports_provider_objects_and_rejects_bad_provider():
 
     with pytest.raises(TypeError, match="laneseg_provider"):
         PerceptionPipeline(laneseg_provider=BadProvider()).process_frame(np.zeros((32, 32, 3), dtype=np.uint8))
+
+
+def test_pipeline_default_traffic_light_provider_uses_v2_manifest():
+    assert DEFAULT_TRAFFIC_LIGHT_MANIFEST.name == "smartcart_traffic_light_yolov8n_combined_v2_pt_v1.manifest.json"
+    provider = build_default_traffic_light_provider(backend=FixedPredictionBackend([{"label": "yellow", "conf": 0.88}]))
+    output = PerceptionPipeline(traffic_light_provider=provider).process_frame(np.zeros((32, 32, 3), dtype=np.uint8))
+    assert output.traffic_light == TrafficLight("yellow", 0.88)
+
+
+def test_pipeline_default_laneseg_provider_uses_registered_manifest():
+    assert DEFAULT_LANESEG_MANIFEST.name == "smartcart_laneseg_yolov8n_seg_roboflow_pt_v1.manifest.json"
+    provider = build_default_laneseg_provider(backend=FixedPredictionBackend({"mask_id": 1, "conf": 0.88}))
+    output = PerceptionPipeline(laneseg_provider=provider).process_frame(np.zeros((32, 32, 3), dtype=np.uint8))
+    assert output.laneseg == LaneSeg(1, 0.88)
 
 
 def test_rule_based_lane_segmenter_detects_synthetic_sidewalk_roi():

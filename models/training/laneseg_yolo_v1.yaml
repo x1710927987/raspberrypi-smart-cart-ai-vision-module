@@ -1,0 +1,19 @@
+# Lane/drivable-area YOLO segmentation v1 baseline training config.
+# Uses Roboflow sidewalk segmentation data in YOLO polygon format.
+
+data: data/external/roboflow_sidewalk_v1_split/data.yaml
+model: models/weights/yolov8n-seg.pt
+epochs: 100
+imgsz: 640
+batch: 16
+device: null
+workers: 4
+patience: 30
+seed: 42
+project: models/training/laneseg_yolo_v1
+name: smartcart_laneseg_yolov8n_seg_roboflow_v1
+exist_ok: false
+plots: true
+export_format: "none"
+manifest_template: models/model_manifest.laneseg.example.json
+notes: Lane/drivable-area YOLO segmentation v1 baseline for sidewalk masks.
