@@ -60,3 +60,33 @@ The whole development is divided into 4 phases, with clear task nodes and delive
 - **Deliverables**: Complete AI control program, model files, joint debugging test video, full project documents, internship summary report
 
 ## Repository Structure
+
+## Model Change Acceptance Workflow
+
+After registering or switching any perception model, run the unified perception
+pipeline smoke test before treating the model as ready for integration. This
+checks that the default manifests, model artifacts, backend loading,
+postprocessing, fusion, JSON serialization, and `PerceptionOutput` validation
+all work together.
+
+```powershell
+conda activate smartcart-ai
+python tools\run_perception_pipeline_smoke.py --device 0
+```
+
+For CPU-only validation, use:
+
+```powershell
+conda activate smartcart-ai
+python tools\run_perception_pipeline_smoke.py --device cpu
+```
+
+The command writes:
+
+```text
+cache/evaluation/unified_pipeline_smoke_test.json
+cache/evaluation/unified_pipeline_smoke_test.md
+```
+
+The model change is acceptable when the command reports `status=ok` and every
+saved `PerceptionOutput` can be read back and validated.
