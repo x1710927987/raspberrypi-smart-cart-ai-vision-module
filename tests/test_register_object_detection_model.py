@@ -29,6 +29,8 @@ def test_register_object_detection_model_copies_artifact_and_writes_manifest():
     manifest_dir = workspace / "manifests"
     source_model.parent.mkdir(parents=True, exist_ok=True)
     source_model.write_bytes(b"fake-object-yolo-weights")
+    dataset_yaml = workspace / "data.yaml"
+    dataset_yaml.write_text("nc: 5\nnames: ['pedestrian', 'bicycle', 'car', 'scooter', 'roadblock']\n", encoding="utf-8")
     (run_dir / "results.csv").write_text(
         "\n".join(
             [
@@ -46,6 +48,8 @@ def test_register_object_detection_model_copies_artifact_and_writes_manifest():
         weights_dir=weights_dir,
         manifest_dir=manifest_dir,
         model_id="smartcart_objects_yolov8n_test_pt_v1",
+        dataset_manifest=str(dataset_yaml),
+        dataset_version="objects_combined_v2_split",
         license="test-license",
         exported_at="2026-05-09",
         overwrite=True,
@@ -61,11 +65,22 @@ def test_register_object_detection_model_copies_artifact_and_writes_manifest():
     assert manifest.artifact_format == "pt"
     assert manifest.map_label("pedestrian") == "pedestrian"
     assert manifest.map_label("car") == "car"
+    assert manifest.map_label("scooter") == "scooter"
+    assert manifest.map_label("roadblock") == "roadblock"
 
     payload = json.loads(result.manifest_path.read_text(encoding="utf-8"))
     assert payload["status"] == "registered"
     assert payload["source"]["training_platform"] == "ultralytics"
-    assert payload["source"]["dataset_manifest"] == "data/processed/objects_yolo_v1/data.yaml"
+    assert payload["source"]["dataset_manifest"] == str(dataset_yaml)
+    assert payload["source"]["dataset_version"] == "objects_combined_v2_split"
+    assert payload["model_classes"] == ["pedestrian", "bicycle", "car", "scooter", "roadblock"]
+    assert payload["schema_mapping"] == {
+        "pedestrian": "pedestrian",
+        "bicycle": "bicycle",
+        "car": "car",
+        "scooter": "scooter",
+        "roadblock": "roadblock",
+    }
     assert payload["evaluation"]["metrics"]["map50"] == 0.57
     assert payload["evaluation"]["metrics"]["precision"] == 0.61
     assert payload["evaluation"]["metrics"]["recall"] == 0.52

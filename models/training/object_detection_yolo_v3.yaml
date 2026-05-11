@@ -1,0 +1,20 @@
+# Object-detection YOLO v3 fine-tune config.
+# Build data/external/objects_combined_v3_split after syncing scooter label fixes
+# and adding reviewed scooter similar-data samples.
+
+data: data/external/objects_combined_v3_split/data.yaml
+model: models/weights/smartcart_objects_yolov8n_combined_v2_pt_v1.pt
+epochs: 50
+imgsz: 640
+batch: 16
+device: null
+workers: 4
+patience: 30
+seed: 42
+project: models/training/object_detection_yolo_v3
+name: smartcart_objects_yolov8n_combined_v3
+exist_ok: false
+plots: true
+export_format: "none"
+manifest_template: models/model_manifest.objects.example.json
+notes: Object-detection YOLO v3 fine-tune after scooter label fixes and reviewed similar-data augmentation.
