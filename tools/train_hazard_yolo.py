@@ -31,7 +31,7 @@ class TrainConfig:
     plots: bool = True
     export_format: str = "none"
     manifest_template: Path = REPO_ROOT / "models" / "model_manifest.hazard.example.json"
-    notes: str = "Hazard YOLO v1 baseline for pothole, steps, speed bump, water, and debris."
+    notes: str = "Hazard YOLO v1 baseline for pothole, curb, steps, speed bump, water, and debris."
 
 
 def load_train_config(path: str | Path | None = None) -> TrainConfig:

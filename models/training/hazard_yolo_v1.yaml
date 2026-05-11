@@ -16,4 +16,4 @@ exist_ok: false
 plots: true
 export_format: "none"
 manifest_template: models/model_manifest.hazard.example.json
-notes: Hazard YOLO v1 baseline for pothole, steps, speed bump, water, and debris.
+notes: Hazard YOLO v1 baseline for pothole, curb, steps, speed bump, water, and debris.
