@@ -29,6 +29,8 @@ def test_register_hazard_model_copies_artifact_and_writes_manifest():
     manifest_dir = workspace / "manifests"
     source_model.parent.mkdir(parents=True, exist_ok=True)
     source_model.write_bytes(b"fake-hazard-yolo-weights")
+    dataset_yaml = workspace / "data.yaml"
+    dataset_yaml.write_text("nc: 2\nnames: ['pothole', 'curb']\n", encoding="utf-8")
     (run_dir / "results.csv").write_text(
         "\n".join(
             [
@@ -46,6 +48,7 @@ def test_register_hazard_model_copies_artifact_and_writes_manifest():
         weights_dir=weights_dir,
         manifest_dir=manifest_dir,
         model_id="smartcart_hazard_yolov8n_test_pt_v1",
+        dataset_manifest=str(dataset_yaml),
         license="test-license",
         exported_at="2026-05-10",
         overwrite=True,
@@ -60,11 +63,14 @@ def test_register_hazard_model_copies_artifact_and_writes_manifest():
     assert manifest.task == "hazard"
     assert manifest.artifact_format == "pt"
     assert manifest.map_label("pothole") == "pothole"
+    assert manifest.map_label("curb") == "curb"
 
     payload = json.loads(result.manifest_path.read_text(encoding="utf-8"))
     assert payload["status"] == "registered"
     assert payload["source"]["training_platform"] == "ultralytics"
-    assert payload["source"]["dataset_manifest"] == "data/external/roboflow_hazard_v1_split/data.yaml"
+    assert payload["source"]["dataset_manifest"] == str(dataset_yaml)
+    assert payload["model_classes"] == ["pothole", "curb"]
+    assert payload["schema_mapping"] == {"pothole": "pothole", "curb": "curb"}
     assert payload["evaluation"]["metrics"]["map50"] == 0.57
     assert payload["evaluation"]["metrics"]["precision"] == 0.61
     assert payload["evaluation"]["metrics"]["recall"] == 0.52
