@@ -4,10 +4,14 @@ import pytest
 
 from perception import make_mock_perception, validate_perception_output
 from perception.camera_pipeline import (
+    DEFAULT_HAZARD_MANIFEST,
     DEFAULT_LANESEG_MANIFEST,
+    DEFAULT_OBJECTS_MANIFEST,
     DEFAULT_TRAFFIC_LIGHT_MANIFEST,
     PerceptionPipeline,
     PipelineConfig,
+    build_default_object_detector,
+    build_default_hazard_provider,
     build_default_laneseg_provider,
     build_default_traffic_light_provider,
 )
@@ -58,6 +62,7 @@ def test_detection_postprocess_maps_labels_filters_and_unknowns():
     detections = [
         ModelDetection("person", [10, 20, 110, 220], 0.91),
         ModelDetection("traffic cone", [200, 210, 250, 300], 0.72),
+        ModelDetection("roadblock", [300, 210, 360, 310], 0.82),
         ModelDetection("person", [1, 2, 3, 4], 0.10),
         ModelDetection("banana", [20, 20, 40, 40], 0.99),
     ]
@@ -65,6 +70,7 @@ def test_detection_postprocess_maps_labels_filters_and_unknowns():
     assert objects == [
         ObjectBBox("pedestrian", [10.0, 20.0, 110.0, 220.0], 0.91),
         ObjectBBox("obstacle", [200.0, 210.0, 250.0, 300.0], 0.72),
+        ObjectBBox("roadblock", [300.0, 210.0, 360.0, 310.0], 0.82),
     ]
     unknown = postprocess_detections([detections[-1]], config=DetectionConfig(keep_unknown=True))
     assert unknown == [ObjectBBox("unknown", [20.0, 20.0, 40.0, 40.0], 0.99)]
@@ -154,6 +160,15 @@ def test_pipeline_supports_provider_objects_and_rejects_bad_provider():
         PerceptionPipeline(laneseg_provider=BadProvider()).process_frame(np.zeros((32, 32, 3), dtype=np.uint8))
 
 
+def test_pipeline_default_object_detector_uses_v3_manifest():
+    assert DEFAULT_OBJECTS_MANIFEST.name == "smartcart_objects_yolov8n_combined_v3_pt_v1.manifest.json"
+    detector = build_default_object_detector(
+        backend=FixedPredictionBackend([{"label": "scooter", "bbox": [1, 2, 20, 30], "conf": 0.88}])
+    )
+    output = PerceptionPipeline(detector=detector).process_frame(np.zeros((32, 32, 3), dtype=np.uint8))
+    assert output.objects == [ObjectBBox("scooter", [1.0, 2.0, 20.0, 30.0], 0.88)]
+
+
 def test_pipeline_default_traffic_light_provider_uses_v2_manifest():
     assert DEFAULT_TRAFFIC_LIGHT_MANIFEST.name == "smartcart_traffic_light_yolov8n_combined_v2_pt_v1.manifest.json"
     provider = build_default_traffic_light_provider(backend=FixedPredictionBackend([{"label": "yellow", "conf": 0.88}]))
@@ -166,6 +181,13 @@ def test_pipeline_default_laneseg_provider_uses_registered_manifest():
     provider = build_default_laneseg_provider(backend=FixedPredictionBackend({"mask_id": 1, "conf": 0.88}))
     output = PerceptionPipeline(laneseg_provider=provider).process_frame(np.zeros((32, 32, 3), dtype=np.uint8))
     assert output.laneseg == LaneSeg(1, 0.88)
+
+
+def test_pipeline_default_hazard_provider_uses_registered_manifest():
+    assert DEFAULT_HAZARD_MANIFEST.name == "smartcart_hazard_yolov8n_roboflow_pt_v1.manifest.json"
+    provider = build_default_hazard_provider(backend=FixedPredictionBackend({"label": "curb", "conf": 0.82}))
+    output = PerceptionPipeline(hazard_provider=provider).process_frame(np.zeros((32, 32, 3), dtype=np.uint8))
+    assert output.hazard == Hazard("curb", 0.82)
 
 
 def test_rule_based_lane_segmenter_detects_synthetic_sidewalk_roi():
@@ -205,6 +227,7 @@ def test_rule_based_hazard_detector_detects_synthetic_pothole():
 def test_rule_based_hazard_detector_rejects_clean_frame_and_bad_config():
     detector = RuleBasedHazardDetector(HazardDetectionConfig(roi_top_ratio=0.5))
     assert detector.detect(np.full((80, 80, 3), 150, dtype=np.uint8)) is None
+    assert RuleBasedHazardDetector(HazardDetectionConfig(hazard_type="curb")).config.hazard_type == "curb"
     with pytest.raises(ValueError, match="hazard_type"):
         RuleBasedHazardDetector(HazardDetectionConfig(hazard_type="crack"))
 
