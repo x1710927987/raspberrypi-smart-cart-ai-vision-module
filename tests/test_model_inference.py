@@ -112,6 +112,16 @@ def test_manifest_validation_rejects_bad_task_and_bad_schema_label():
         bad_label.validate()
 
 
+def test_manifest_accepts_curb_as_hazard_schema_label():
+    manifest = _manifest(task="hazard", classes=["curb"], mapping={"curb": "curb"})
+    assert manifest.map_label("curb") == "curb"
+
+
+def test_manifest_accepts_roadblock_as_object_schema_label():
+    manifest = _manifest(task="objects", classes=["cone"], mapping={"cone": "roadblock"})
+    assert manifest.map_label("cone") == "roadblock"
+
+
 def _manifest(*, task, classes=None, mapping=None, postprocessing=None, validate=True):
     payload = {
         "schema_version": "0.1",

@@ -50,6 +50,7 @@
   },
   "model_classes": [
     "pothole",
+    "curb",
     "step_up",
     "step_down",
     "speed_bump",
@@ -58,6 +59,7 @@
   ],
   "schema_mapping": {
     "pothole": "pothole",
+    "curb": "curb",
     "step_up": "step_up",
     "step-down": "step_down",
     "step_down": "step_down",
@@ -70,6 +72,7 @@
     "objects": [
       "pedestrian",
       "obstacle",
+      "roadblock",
       "bicycle",
       "car",
       "animal",
@@ -89,6 +92,7 @@
     ],
     "hazard": [
       "pothole",
+      "curb",
       "step_up",
       "step_down",
       "speed_bump",

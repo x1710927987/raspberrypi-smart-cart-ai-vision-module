@@ -3,7 +3,7 @@
   "model_id": "smartcart_objects_yolov8n_roboflow_onnx_v1",
   "task": "objects",
   "status": "example",
-  "description": "Example object-detection YOLO manifest for the prepared pedestrian, bicycle, and car dataset exported to ONNX.",
+  "description": "Example object-detection YOLO manifest for the prepared pedestrian, bicycle, car, scooter, and roadblock dataset exported to ONNX.",
   "artifact": {
     "path": "models/weights/smartcart_objects_yolov8n_roboflow_onnx_v1.onnx",
     "format": "onnx",
@@ -53,7 +53,7 @@
     "output_tensors": [
       {
         "name": "output0",
-        "shape": [1, 7, 8400],
+        "shape": [1, 9, 8400],
         "dtype": "float32"
       }
     ],
@@ -78,17 +78,22 @@
   "model_classes": [
     "pedestrian",
     "bicycle",
-    "car"
+    "car",
+    "scooter",
+    "roadblock"
   ],
   "schema_mapping": {
     "pedestrian": "pedestrian",
     "bicycle": "bicycle",
-    "car": "car"
+    "car": "car",
+    "scooter": "scooter",
+    "roadblock": "roadblock"
   },
   "schema_labels": {
     "objects": [
       "pedestrian",
       "obstacle",
+      "roadblock",
       "bicycle",
       "car",
       "animal",
@@ -113,8 +118,8 @@
     "perception_module": "perception.detection",
     "expected_output": "list[perception.runtime.ObjectBBox]",
     "notes": [
-      "This baseline currently covers pedestrian, bicycle, and car only.",
-      "Add obstacle, stroller, wheelchair, scooter, and other schema classes only after collecting enough labeled data.",
+      "This baseline covers pedestrian, bicycle, car, scooter, and roadblock after merging Roboflow object sources.",
+      "Add stroller, wheelchair, bollard, animal, and other schema classes only after collecting enough labeled data.",
       "Run tools/check_model_manifest.py before enabling a trained artifact in the camera pipeline."
     ]
   }

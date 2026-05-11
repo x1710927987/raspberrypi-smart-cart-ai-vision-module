@@ -31,11 +31,11 @@ Shape (all keys present; nullable where noted):
 Field definitions:
 - `laneseg.mask_id` (int): Identifier of the drivable-area mask (implementation-defined indexing). `conf` confidence.
 - `objects[]`:
-  - `cls` (str): Object class. Baseline classes: `pedestrian`, `obstacle`, `bicycle`, `car`, `animal`, `stroller`, `wheelchair`, `bollard`, `scooter`, `unknown`.
+  - `cls` (str): Object class. Baseline classes: `pedestrian`, `obstacle`, `roadblock`, `bicycle`, `car`, `animal`, `stroller`, `wheelchair`, `bollard`, `scooter`, `unknown`.
   - `bbox` (float[4]): `[x1, y1, x2, y2]` in pixels. Require `x2 > x1`, `y2 > y1`.
   - `conf` (float): detection confidence.
 - `traffic_light.state` (enum): `red` | `yellow` | `green` | `off` | `flashing` | `unknown`. `conf` confidence.
-- `hazard.type` (enum): baseline `pothole` | `step_up` | `step_down` | `speed_bump` | `water` | `debris` | `unknown`. `conf` confidence.
+- `hazard.type` (enum): baseline `pothole` | `curb` | `step_up` | `step_down` | `speed_bump` | `water` | `debris` | `unknown`. `conf` confidence.
 
 Constraints and notes:
 - All confidences in [0, 1]. Empty arrays allowed. Nullable blocks may be `null` when not available.
@@ -150,9 +150,9 @@ Proposed as a bitmask (combine by sum). To be confirmed.
 - **BBox coordinates**: pixel coordinates (top-left origin), not normalized.
 - **Steer sign & range**: left-positive; clip to [-30.0°, 30.0°]; 1 decimal precision on wire.
 - **Speed bounds**: clip to [0.0, 1.2] m/s; quantize to 0.05 m/s; V0 does not constrain acceleration/jerk.
-- **Object classes**: `pedestrian`, `obstacle`, `bicycle`, `car`, `animal`, `stroller`, `wheelchair`, `bollard`, `scooter`, `unknown`.
+- **Object classes**: `pedestrian`, `obstacle`, `roadblock`, `bicycle`, `car`, `animal`, `stroller`, `wheelchair`, `bollard`, `scooter`, `unknown`.
 - **Traffic-light states**: `red`, `yellow`, `green`, `off`, `flashing`, `unknown`.
-- **Hazard types**: `pothole`, `step_up`, `step_down`, `speed_bump`, `water`, `debris`, `unknown`.
+- **Hazard types**: `pothole`, `curb`, `step_up`, `step_down`, `speed_bump`, `water`, `debris`, `unknown`.
 - **Serial details**: `\n` line ending; ASCII encoding; 115200 baud; CRC = ASCII sum mod 256 (2-digit uppercase hex).
 - **Heartbeat & fail-safe**: AI downlink ≥ 5 Hz; if > 300 ms without valid `CMD`, board brakes to safe stop; board is fail-safe authority.
 - **Voltage/temp ranges**: 9–16 V; 0–80 °C for warnings.

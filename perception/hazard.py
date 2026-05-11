@@ -113,7 +113,7 @@ def _confidence(area: int, roi_area: int, min_area: int) -> float:
 def _validate_config(config: HazardDetectionConfig) -> None:
     if not 0.0 <= config.roi_top_ratio < 1.0:
         raise ValueError("roi_top_ratio must be in [0.0, 1.0)")
-    if config.hazard_type not in {"pothole", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"}:
+    if config.hazard_type not in {"pothole", "curb", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"}:
         raise ValueError("hazard_type is not supported by schema.md")
     if not 0 <= config.dark_value_threshold <= 255:
         raise ValueError("dark_value_threshold must be in [0, 255]")

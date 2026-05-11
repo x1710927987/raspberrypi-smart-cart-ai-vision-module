@@ -12,6 +12,7 @@ SCHEMA_LABELS = {
     "objects": {
         "pedestrian",
         "obstacle",
+        "roadblock",
         "bicycle",
         "car",
         "animal",
@@ -22,7 +23,7 @@ SCHEMA_LABELS = {
         "unknown",
     },
     "traffic_light": {"red", "yellow", "green", "off", "flashing", "unknown"},
-    "hazard": {"pothole", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"},
+    "hazard": {"pothole", "curb", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"},
     "laneseg": set(),
 }
 

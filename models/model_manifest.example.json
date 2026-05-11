@@ -79,18 +79,21 @@
     "person",
     "bicycle",
     "car",
-    "traffic cone"
+    "traffic cone",
+    "roadblock"
   ],
   "schema_mapping": {
     "person": "pedestrian",
     "bicycle": "bicycle",
     "car": "car",
-    "traffic cone": "obstacle"
+    "traffic cone": "obstacle",
+    "roadblock": "roadblock"
   },
   "schema_labels": {
     "objects": [
       "pedestrian",
       "obstacle",
+      "roadblock",
       "bicycle",
       "car",
       "animal",
@@ -110,6 +113,7 @@
     ],
     "hazard": [
       "pothole",
+      "curb",
       "step_up",
       "step_down",
       "speed_bump",

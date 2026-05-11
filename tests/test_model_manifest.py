@@ -35,10 +35,12 @@ def test_objects_manifest_example_matches_schema():
     manifest = load_model_manifest(REPO_ROOT / "models" / "model_manifest.objects.example.json")
     assert manifest.task == "objects"
     assert manifest.artifact_format == "onnx"
-    assert manifest.model_classes == ["pedestrian", "bicycle", "car"]
+    assert manifest.model_classes == ["pedestrian", "bicycle", "car", "scooter", "roadblock"]
     assert manifest.map_label("pedestrian") == "pedestrian"
     assert manifest.map_label("bicycle") == "bicycle"
     assert manifest.map_label("car") == "car"
+    assert manifest.map_label("scooter") == "scooter"
+    assert manifest.map_label("roadblock") == "roadblock"
 
 
 def test_check_model_manifest_accepts_traffic_light_example():

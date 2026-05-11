@@ -10,6 +10,7 @@ from perception.runtime import Hazard, LaneSeg, ObjectBBox, PerceptionOutput, Tr
 OBJECT_CLASSES = {
     "pedestrian",
     "obstacle",
+    "roadblock",
     "bicycle",
     "car",
     "animal",
@@ -20,7 +21,7 @@ OBJECT_CLASSES = {
     "unknown",
 }
 TRAFFIC_LIGHT_STATES = {"red", "yellow", "green", "off", "flashing", "unknown"}
-HAZARD_TYPES = {"pothole", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"}
+HAZARD_TYPES = {"pothole", "curb", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"}
 DEFAULT_SCENARIOS = (
     "clear_path",
     "pedestrian_ahead",

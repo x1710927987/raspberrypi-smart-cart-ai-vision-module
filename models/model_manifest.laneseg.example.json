@@ -58,6 +58,7 @@
     "objects": [
       "pedestrian",
       "obstacle",
+      "roadblock",
       "bicycle",
       "car",
       "animal",
@@ -77,6 +78,7 @@
     ],
     "hazard": [
       "pothole",
+      "curb",
       "step_up",
       "step_down",
       "speed_bump",
