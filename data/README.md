@@ -16,6 +16,7 @@ data/
     traffic_light/green/            # Green traffic-light samples
     traffic_light/negative/         # No traffic light or unclear/off samples
     hazard/pothole/                 # Potholes and dark road holes
+    hazard/curb/                    # Curbs and raised sidewalk edges
     hazard/step_up/                 # Curbs or upward steps
     hazard/step_down/               # Downward steps or sudden drops
     hazard/speed_bump/              # Speed bumps
@@ -43,7 +44,7 @@ data/
 Object classes must match `schema.md`:
 
 ```text
-pedestrian, obstacle, bicycle, car, animal, stroller, wheelchair, bollard, scooter, unknown
+pedestrian, obstacle, roadblock, bicycle, car, animal, stroller, wheelchair, bollard, scooter, unknown
 ```
 
 Traffic-light states must match `schema.md`:
@@ -55,7 +56,7 @@ red, yellow, green, off, flashing, unknown
 Hazard types must match `schema.md`:
 
 ```text
-pothole, step_up, step_down, speed_bump, water, debris, unknown
+pothole, curb, step_up, step_down, speed_bump, water, debris, unknown
 ```
 
 Use `negative` only as a raw data folder name for classification negatives. In annotations, prefer `unknown` when a schema-compatible label is required.
@@ -166,7 +167,8 @@ The YOLO class map is a JSON object from source classes or source class indices 
 {
   "person": "pedestrian",
   "0": "pedestrian",
-  "traffic cone": "obstacle"
+  "traffic cone": "obstacle",
+  "roadblock": "roadblock"
 }
 ```
 

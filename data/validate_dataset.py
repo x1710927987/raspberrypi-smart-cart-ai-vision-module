@@ -14,6 +14,7 @@ IMAGE_EXTENSIONS = {".bmp", ".jpg", ".jpeg", ".png", ".webp"}
 OBJECT_CLASSES = {
     "pedestrian",
     "obstacle",
+    "roadblock",
     "bicycle",
     "car",
     "animal",
@@ -24,7 +25,7 @@ OBJECT_CLASSES = {
     "unknown",
 }
 TRAFFIC_LIGHT_STATES = {"red", "yellow", "green", "off", "flashing", "unknown"}
-HAZARD_TYPES = {"pothole", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"}
+HAZARD_TYPES = {"pothole", "curb", "step_up", "step_down", "speed_bump", "water", "debris", "unknown"}
 
 REQUIRED_DIRS = [
     "raw/objects/images",
@@ -34,6 +35,7 @@ REQUIRED_DIRS = [
     "raw/traffic_light/green",
     "raw/traffic_light/negative",
     "raw/hazard/pothole",
+    "raw/hazard/curb",
     "raw/hazard/step_up",
     "raw/hazard/step_down",
     "raw/hazard/speed_bump",
