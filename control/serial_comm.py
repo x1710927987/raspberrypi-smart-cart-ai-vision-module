@@ -118,12 +118,17 @@ class SerialCommandSender:
                 return False
             
             payload = ",".join(parts[:-1])
-            received_crc = parts[-1]
+            received_crc = parts[-1].strip()
             expected_crc = f"{SerialCommandSender._calculate_crc(payload):02X}"
             
             return received_crc == expected_crc
         except Exception:
             return False
+    
+    @staticmethod
+    def _parse_status_frame(frame: str) -> Optional[BoardStatus]:
+        """Parse status frame (alias for BoardStatus.from_serial_frame)."""
+        return BoardStatus.from_serial_frame(frame)
 
 
 class MockSerialSender:

@@ -225,7 +225,7 @@ class TrafficRulesEngine:
         # Green light or no signal: cruise
         return ControlDecision(
             reason=DecisionReason.CLEAR_PATH,
-            target_speed=self.config.cruise_speed,
+            target_speed=self.config.max_speed,  # Changed from cruise_speed to max_speed
             target_steer=0.0,
             should_brake=False,
             confidence=1.0,
