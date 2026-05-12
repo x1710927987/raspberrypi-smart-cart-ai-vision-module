@@ -1,11 +1,7 @@
 """
-Control module: vehicle behavior decision and serial communication.
+Smart Cart Control Module
 
-This module handles:
-1. Traffic rules engine (rule-based decision making)
-2. Behavior decision engine (converts perception to commands)
-3. Serial communication with control board
-4. Mode management (auto/manual/emergency)
+Coordinates behavior decision, traffic rules, and serial communication.
 """
 
 from control.runtime import (
@@ -17,21 +13,12 @@ from control.runtime import (
     ControlCommand,
     BoardStatus,
 )
-
-from control.rules import TrafficRulesEngine, RulesConfig
-
-from control.decision import BehaviorDecisionEngine, DecisionConfig
-
-from control.serial_comm import (
-    SerialCommandSender,
-    MockSerialSender,
-    BoardStatusListener,
-)
-
-from control.app import SmartCartController, ControllerConfig
+from control.rules import TrafficRulesEngine, TrafficRulesConfig
+from control.decision import BehaviorDecisionEngine, BehaviorConfig
+from control.serial_comm import SerialCommandSender, MockSerialSender, BoardStatus
+from control.app import SmartCartController
 
 __all__ = [
-    # Runtime types
     "ControlMode",
     "DecisionReason",
     "ControlConfig",
@@ -39,22 +26,16 @@ __all__ = [
     "ControlDecision",
     "ControlCommand",
     "BoardStatus",
-    # Rules
     "TrafficRulesEngine",
-    "RulesConfig",
-    # Decision
+    "TrafficRulesConfig",
     "BehaviorDecisionEngine",
-    "DecisionConfig",
-    # Serial
+    "BehaviorConfig",
     "SerialCommandSender",
     "MockSerialSender",
-    "BoardStatusListener",
-    # App
     "SmartCartController",
-    "ControllerConfig",
 ]
 
 
-def create_test_controller(use_mock: bool = True):
-    """Factory function for testing."""
+def create_test_controller(use_mock=True):
+    """Quick factory for testing."""
     return SmartCartController(use_mock_serial=use_mock)
