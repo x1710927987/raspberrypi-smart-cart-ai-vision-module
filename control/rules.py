@@ -144,9 +144,10 @@ class TrafficRulesEngine:
     
     def _check_obstacles(self, perception: PerceptionOutput) -> Optional[ControlDecision]:
         """Check for obstacles and decide brake/avoid."""
+        obstacle_classes = {"obstacle", "roadblock", "bollard", "bicycle", "car", "scooter"}
         obstacles = [
             obj for obj in perception.objects
-            if obj.cls in ["obstacle", "roadblock", "bollard"]
+            if obj.cls in obstacle_classes
             and obj.conf >= self.config.min_object_conf
         ]
         

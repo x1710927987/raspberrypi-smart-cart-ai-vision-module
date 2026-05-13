@@ -1,14 +1,14 @@
 # Model Registry Guide
 
-This directory stores model metadata, conversion notes, training notes, and local model weight placeholders for the smart-cart perception module.
+This directory stores model metadata, conversion notes, training notes, and model weight placeholders for the smart-cart perception module.
 
-Large model files are deployment artifacts. Keep them out of Git unless the team explicitly decides to version a tiny test model. Store real `.pt`, `.onnx`, `.tflite`, `.engine`, `.xml`, `.bin`, or `.h5` files under `models/weights/` locally, and record their metadata in a manifest.
+Large model files are deployment artifacts. Deployment-ready `.pt` weights are tracked with Git LFS under `models/weights/`, while local experiments, obsolete smoke weights, converted formats, and training-run outputs should stay ignored unless the team explicitly registers them. Every deployable artifact must also be recorded in a manifest.
 
 ## Directory Layout
 
 ```text
 models/
-  weights/                         # Local model artifacts, usually not committed
+  weights/                         # Git LFS deployment weights plus ignored local experiments
   training/                        # Training configs, class maps, reports, metrics
   conversion/                      # ONNX/TFLite conversion scripts and notes
   model_manifest.example.json      # Example model registry entry

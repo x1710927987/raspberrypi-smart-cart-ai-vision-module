@@ -9,6 +9,7 @@ import time
 from unittest.mock import Mock
 
 from perception import make_mock_perception, PerceptionPipeline
+from perception.runtime import LaneSeg, ObjectBBox, PerceptionOutput
 from control.decision import BehaviorDecisionEngine
 from control.runtime import ControlConfig, ControlMode, DecisionReason
 from control.serial_comm import SerialCommandSender, MockSerialSender
@@ -69,6 +70,24 @@ class TestPerceptionToDecision:
 
         # Should make conservative decision
         assert cmd.brake is True or cmd.v <= 0.3
+
+    @pytest.mark.parametrize("cls", ["bicycle", "car", "scooter", "roadblock"])
+    def test_dynamic_object_classes_trigger_obstacle_logic(self, cls):
+        """Detected traffic participants and roadblocks should slow or stop the cart."""
+        engine = BehaviorDecisionEngine()
+        perception = PerceptionOutput(
+            timestamp=time.time(),
+            laneseg=LaneSeg(mask_id=1, conf=0.95),
+            objects=[ObjectBBox(cls=cls, bbox=[240.0, 360.0, 400.0, 470.0], conf=0.9)],
+            traffic_light=None,
+            hazard=None,
+        )
+
+        cmd = engine.decide(perception)
+
+        assert cmd.reason == DecisionReason.OBSTACLE_DETECTED.value
+        assert cmd.brake is True
+        assert cmd.v == 0.0
 
 
 class TestSerialProtocol:
