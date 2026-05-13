@@ -320,6 +320,62 @@ rpicam-hello --timeout 3000
 
 阶段验收建议优先使用 USB 摄像头。
 
+### 7.3 在 VNC 上查看实时识别画面
+
+如果已经通过 VNC 打开 Raspberry Pi 桌面，可以运行实时可视化工具：
+
+```bash
+python tools/run_perception_live_view.py --camera 0 --device cpu --fps 3
+```
+
+这个窗口会显示：
+
+```text
+摄像头实时画面
+objects 检测框、类别标签、置信度
+traffic_light / laneseg / hazard 当前状态文本
+推理耗时和 FPS
+```
+
+退出方式：
+
+```text
+按 q
+或按 Esc
+```
+
+如果摄像头不是 `0`，换成实际编号：
+
+```bash
+python tools/run_perception_live_view.py --camera 1 --device cpu --fps 3
+```
+
+如果通过 SSH 远程检查、暂时没有 VNC 图形窗口，可以用无窗口模式跑几帧：
+
+```bash
+python tools/run_perception_live_view.py \
+  --camera 0 \
+  --device cpu \
+  --no-window \
+  --max-frames 5 \
+  --print-json-every 1
+```
+
+如果 VNC 中无法弹出窗口，请确认：
+
+```text
+当前是在 Raspberry Pi 桌面终端中运行，而不是纯 SSH 终端
+VNC 已经连接到同一个桌面会话
+OpenCV 使用的是 opencv-python-headless 时，部分系统可能不支持 imshow
+```
+
+如果 `cv2.imshow` 因为 headless OpenCV 不可用，可以先安装带 GUI 支持的 OpenCV，或继续使用 `--no-window` 做命令行验证：
+
+```bash
+python -m pip uninstall -y opencv-python-headless
+python -m pip install opencv-python
+```
+
 ## 8. 检查串口和权限
 
 插上控制板后查看串口：
@@ -404,6 +460,12 @@ mock 模式下：
 
 ```bash
 python control/app.py --camera 0 --mock-serial --fps 5
+```
+
+如果需要观察实时识别效果，优先使用可视化工具：
+
+```bash
+python tools/run_perception_live_view.py --camera 0 --device cpu --fps 3
 ```
 
 注意：首次加载四个 `.pt` 模型会比较慢。第一帧推理通常明显慢于后续帧，这是正常现象。
@@ -762,6 +824,7 @@ python run.py
 [ ] check_model_manifest.py 四个 manifest 都通过
 [ ] run_perception_pipeline_smoke.py 输出 status=ok
 [ ] 摄像头 OpenCV 测试通过
+[ ] run_perception_live_view.py 能在 VNC 中显示实时识别画面，或无窗口模式能输出 JSON
 [ ] mock_mode=true 的 deploy/run.py 能启动
 [ ] 串口设备存在
 [ ] 用户有 dialout 权限
@@ -780,11 +843,12 @@ python run.py
 5. 验证 manifest 和权重
 6. 跑统一感知 smoke test
 7. 测试摄像头
-8. 跑 mock 主服务
-9. 检查串口
-10. 车轮离地，切换真实串口
-11. 小 FPS 实车联调
-12. 记录 FPS、延迟、温度和控制表现
+8. 跑 VNC 实时可视化或无窗口 live view
+9. 跑 mock 主服务
+10. 检查串口
+11. 车轮离地，切换真实串口
+12. 小 FPS 实车联调
+13. 记录 FPS、延迟、温度和控制表现
 ```
 
 ## 16. 参考链接
@@ -799,4 +863,3 @@ https://docs.ultralytics.com/
 Ultralytics Raspberry Pi guide:
 https://docs.ultralytics.com/guides/raspberry-pi/
 ```
-

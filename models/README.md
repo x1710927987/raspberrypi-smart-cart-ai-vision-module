@@ -193,6 +193,16 @@ The smoke test must report `status=ok`. It also validates that the saved
 `PerceptionOutput` payloads can round-trip through JSON and pass runtime schema
 checks.
 
+4. On Raspberry Pi or a VNC desktop, run the live camera view to verify visual
+   output:
+
+```powershell
+python tools\run_perception_live_view.py --camera 0 --device cpu --fps 3
+```
+
+The live view draws `objects` bounding boxes and labels, and displays
+traffic-light, laneseg, hazard, FPS, and inference latency status.
+
 ## Minimum Acceptance Criteria
 
 A model is ready to integrate when:
@@ -202,6 +212,7 @@ A model is ready to integrate when:
 - The class mapping only uses labels from `schema.md`.
 - Task-specific evaluation can run on the relevant test split, when an evaluator exists.
 - `tools/run_perception_pipeline_smoke.py` reports `status=ok`.
+- `tools/run_perception_live_view.py` can show annotated live camera output on the target device or VNC session.
 - The postprocessed output can be converted into and validated as `PerceptionOutput`.
 
 ## Current Baselines

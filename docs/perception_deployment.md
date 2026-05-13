@@ -23,6 +23,7 @@ models/weights/smartcart_traffic_light_yolov8n_combined_v2_pt_v1.pt
 models/weights/smartcart_laneseg_yolov8n_seg_roboflow_pt_v1.pt
 models/weights/smartcart_hazard_yolov8n_roboflow_pt_v1.pt
 tools/run_perception_pipeline_smoke.py
+tools/run_perception_live_view.py
 perception_delivery_report.md
 docs/perception_deployment.md
 ```
@@ -159,6 +160,30 @@ The smoke test is successful when:
 - Each saved `PerceptionOutput` can round-trip through JSON and pass runtime
   validation.
 
+## Live Camera View
+
+After the smoke test passes and a camera is available, use the live view tool on
+the Raspberry Pi desktop or through VNC:
+
+```bash
+python tools/run_perception_live_view.py --camera 0 --device cpu --fps 3
+```
+
+The window draws object boxes and labels from `output.objects`, and displays
+`traffic_light`, `laneseg`, `hazard`, FPS, and inference latency in the corner.
+Press `q` or `Esc` to exit.
+
+For an SSH-only check without an OpenCV window:
+
+```bash
+python tools/run_perception_live_view.py \
+  --camera 0 \
+  --device cpu \
+  --no-window \
+  --max-frames 5 \
+  --print-json-every 1
+```
+
 ## Runtime Integration Pattern
 
 Control code should depend on `PerceptionOutput`, not on individual YOLO models.
@@ -250,6 +275,9 @@ Before giving the perception package to the control-logic team, confirm:
 - The four default weight files exist under `models/weights/`.
 - `python tools/run_perception_pipeline_smoke.py --device cpu` reports
   `status=ok`.
+- `python tools/run_perception_live_view.py --camera 0 --device cpu --fps 3`
+  can show annotated camera frames on VNC, or the same command with
+  `--no-window --max-frames 5` can process frames on SSH.
 - The control team has a sample `PerceptionOutput` JSON.
 - The control team knows that hazard output may need ROI and temporal
   confirmation before triggering braking.

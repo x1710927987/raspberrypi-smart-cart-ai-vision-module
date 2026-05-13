@@ -99,3 +99,13 @@ cache/evaluation/unified_pipeline_smoke_test.md
 
 The model change is acceptable when the command reports `status=ok` and every
 saved `PerceptionOutput` can be read back and validated.
+
+For Raspberry Pi or VNC visual validation, run the live camera viewer after the
+smoke test passes:
+
+```powershell
+python tools\run_perception_live_view.py --camera 0 --device cpu --fps 3
+```
+
+It draws object boxes and labels on live camera frames and shows the current
+traffic-light, laneseg, hazard, FPS, and inference latency status.
