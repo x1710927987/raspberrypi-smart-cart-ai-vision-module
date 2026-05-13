@@ -86,3 +86,6 @@ class BehaviorDecisionEngine:
     def get_state(self) -> ControlState:
         """Get diagnostic state."""
         return self.state
+
+# Backward compatibility alias
+DecisionEngine = BehaviorDecisionEngine
