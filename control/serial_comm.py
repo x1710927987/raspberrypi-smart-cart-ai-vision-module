@@ -163,3 +163,4 @@ class MockSerialSender:
             temperature=35.0,
             error_code=0,
         )
+SerialCommunicator = SerialCommandSender
