@@ -1,175 +1,157 @@
-import yaml
-import time
+from __future__ import annotations
+
 import logging
 import logging.handlers
 import os
-import cv2
+import time
+from pathlib import Path
+from typing import Any
 
-# Team A & B interfaces (assumed implemented)
-from perception.runtime import PerceptionPipeline
-from control.engine import ControlEngine
-from io_camera.protocol import SerialCommunicator
+import cv2
+import yaml
+
+from control.decision import DecisionEngine
+from control.runtime import ControlCommand
+from control.serial_comm import MockSerialSender, SerialCommandSender
+from perception.camera_pipeline import PerceptionPipeline
+from perception.mock_perception import make_mock_perception
+from perception.runtime import PerceptionOutput
 
 
 class SmartCartService:
-    def __init__(self, config_path: str):
+    """Deployment service that wires camera, perception, decision, and serial output."""
+
+    def __init__(self, config_path: str | os.PathLike[str]):
         self.running = False
         self.config = self._load_config(config_path)
         self._setup_logging()
 
         self.logger = logging.getLogger("SmartCart.Service")
+        self.mock_mode = bool(self.config.get("runtime", {}).get("mock_mode", False))
+        self.target_loop_time = 1.0 / float(self.config.get("runtime", {}).get("target_fps_min", 10.0))
+
+        self.perception: PerceptionPipeline | None = None
+        self.control: DecisionEngine | None = None
+        self.serial_io: SerialCommandSender | MockSerialSender | None = None
+        self.cap: cv2.VideoCapture | None = None
+
         self.logger.info("System initializing...")
+        self._initialize_components()
 
-        # Mock mode flag (for testing without real modules)
-        self.mock_mode = self.config.get('runtime', {}).get('mock_mode', False)
+    def _initialize_components(self) -> None:
+        perception_cfg = self.config.get("perception", {})
+        serial_cfg = self.config.get("serial", {})
 
-        if not self.mock_mode:
-            # 1. Perception module (Team A)
-            # It may require camera index / model path; we pass its config subsection.
-            self.perception = PerceptionPipeline(self.config.get('perception', {}))
+        self.control = DecisionEngine()
+        self.serial_io = (
+            MockSerialSender()
+            if self.mock_mode
+            else SerialCommandSender(
+                port=str(serial_cfg.get("port", "/dev/ttyUSB0")),
+                baudrate=int(serial_cfg.get("baud", serial_cfg.get("baudrate", 115200))),
+            )
+        )
+        if not self.serial_io.connect():
+            raise RuntimeError("serial initialization failed")
 
-            # 2. Control module (Team B)
-            self.control = ControlEngine(self.config.get('control', {}))
-
-            # 3. Serial communication module (Team B)
-            self.serial_io = SerialCommunicator(self.config.get('serial', {}))
-
-            # Optional: camera capture if A does not handle it internally
-            # Some PerceptionPipeline may have its own capture; but we assume we
-            # need to read frames and pass to perception.process(frame).
-            # We'll create a VideoCapture instance for that purpose.
-            camera_cfg = self.config.get('perception', {})
-            camera_idx = camera_cfg.get('camera_index', 0)
-            self.cap = cv2.VideoCapture(camera_idx)
-            if not self.cap.isOpened():
-                self.logger.error(f"Cannot open camera index {camera_idx}")
-                raise RuntimeError("Camera initialization failed")
-        else:
-            # Dummy placeholders for mock mode (avoid attribute errors)
+        if self.mock_mode:
             self.perception = None
-            self.control = None
-            self.serial_io = None
             self.cap = None
+            self.logger.info("Mock mode enabled; camera and real perception are skipped.")
+            return
 
-        # Framerate control (Schema requires >=5Hz, we target >=10Hz)
-        self.target_loop_time = 1.0 / self.config.get('runtime', {}).get('target_fps_min', 10.0)
+        self.perception = PerceptionPipeline.with_default_models(device=perception_cfg.get("device"))
+        camera_idx = int(perception_cfg.get("camera_index", 0))
+        self.cap = cv2.VideoCapture(camera_idx)
+        if not self.cap.isOpened():
+            raise RuntimeError(f"cannot open camera index {camera_idx}")
 
-    def _load_config(self, path: str) -> dict:
-        """Load YAML configuration file."""
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Configuration file not found: {path}")
-        with open(path, 'r', encoding='utf-8') as f:
-            return yaml.safe_load(f)
+    @staticmethod
+    def _load_config(path: str | os.PathLike[str]) -> dict[str, Any]:
+        config_path = Path(path)
+        if not config_path.exists():
+            raise FileNotFoundError(f"configuration file not found: {config_path}")
+        with config_path.open("r", encoding="utf-8") as handle:
+            return yaml.safe_load(handle) or {}
 
-    def _setup_logging(self):
-        """Configure robust logging system (console and file outputs)."""
-        log_cfg = self.config.get('logging', {})
-        log_dir = log_cfg.get('log_dir', 'logs')
-        os.makedirs(log_dir, exist_ok=True)
+    def _setup_logging(self) -> None:
+        log_cfg = self.config.get("logging", {})
+        log_dir = Path(log_cfg.get("log_dir", "logs"))
+        log_dir.mkdir(parents=True, exist_ok=True)
 
         logger = logging.getLogger("SmartCart")
-        level_str = log_cfg.get('level', 'INFO').upper()
-        logger.setLevel(getattr(logging, level_str, logging.INFO))
+        logger.handlers.clear()
+        logger.setLevel(getattr(logging, str(log_cfg.get("level", "INFO")).upper(), logging.INFO))
 
-        formatter = logging.Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s')
+        formatter = logging.Formatter("[%(asctime)s] [%(levelname)s] [%(name)s] %(message)s")
 
-        ch = logging.StreamHandler()
-        ch.setFormatter(formatter)
-        logger.addHandler(ch)
+        console = logging.StreamHandler()
+        console.setFormatter(formatter)
+        logger.addHandler(console)
 
-        fh = logging.handlers.TimedRotatingFileHandler(
-            os.path.join(log_dir, 'cart_system.log'),
-            when='midnight', backupCount=7, encoding='utf-8'
+        file_handler = logging.handlers.TimedRotatingFileHandler(
+            log_dir / "cart_system.log",
+            when="midnight",
+            backupCount=7,
+            encoding="utf-8",
         )
-        fh.setFormatter(formatter)
-        logger.addHandler(fh)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
 
-    def _send_emergency_brake(self):
-        """Send emergency brake command to the underlying board (if serial available)."""
-        if self.mock_mode or not self.serial_io:
-            self.logger.warning("Emergency brake requested, but serial_io unavailable (mock mode).")
+    def _send_emergency_brake(self) -> None:
+        if self.serial_io is None:
+            self.logger.warning("Emergency brake requested, but serial output is unavailable.")
             return
-        emergency_cmd = {
-            "mode": "auto",
-            "v": 0.0,
-            "steer": 0.0,
-            "brake": True,
-            "reason": "emergency_stop"
-        }
-        try:
-            self.serial_io.send_command(emergency_cmd)
-            self.logger.info("Emergency brake command sent.")
-        except Exception as e:
-            self.logger.error(f"Failed to send emergency brake: {e}")
+        command = ControlCommand(
+            mode="emergency_brake",
+            v=0.0,
+            steer=0.0,
+            brake=True,
+            reason="emergency_stop",
+            timestamp=time.time(),
+        )
+        self.serial_io.send_command(command)
+        self.logger.info("Emergency brake command sent.")
 
-    def stop(self):
-        """Safely stop the entire system."""
-        self.logger.warning("Stopping system, dispatching emergency brake command!")
+    def stop(self) -> None:
+        self.logger.warning("Stopping system; dispatching emergency brake command.")
         self.running = False
         self._send_emergency_brake()
         if self.cap is not None:
             self.cap.release()
+        if self.serial_io is not None:
+            self.serial_io.disconnect()
         self.logger.info("System safely stopped.")
 
-    def start(self):
-        """Main execution loop."""
+    def start(self) -> None:
+        if self.control is None or self.serial_io is None:
+            raise RuntimeError("service components are not initialized")
+
         self.running = True
-        self.logger.info("Main loop started, beginning processing...")
+        self.logger.info("Main loop started.")
 
         while self.running:
             loop_start = time.time()
-
             try:
-                if self.mock_mode:
-                    # Use mock data when no real modules are available
-                    perception_result = {
-                        "timestamp": loop_start,
-                        "objects": [],
-                        "hazard": None
-                    }
-                    # Mock control command
-                    control_cmd = {"v": 0.5, "steer": 0.0, "brake": False, "mode": "auto"}
-                else:
-                    # --- Step 1: Capture frame and run perception ---
-                    ret, frame = self.cap.read()
-                    if not ret:
-                        self.logger.warning("Failed to grab frame, skipping cycle")
-                        time.sleep(0.05)
-                        continue
-                    perception_result = self.perception.process(frame)
-                    # perception_result should be a PerceptionOutput object
-                    # (convert to dict for logging if needed)
-                    if hasattr(perception_result, '__dict__'):
-                        perception_dict = perception_result.__dict__
-                    else:
-                        perception_dict = perception_result
-
-                    # --- Step 2: Control decision ---
-                    control_cmd = self.control.decide(perception_result)
-                    # control_cmd may be a ControlCommand object or dict; we log as dict
-                    if hasattr(control_cmd, '__dict__'):
-                        cmd_dict = control_cmd.__dict__
-                    else:
-                        cmd_dict = control_cmd
-
-                    # --- Step 3: Send command via serial ---
-                    self.serial_io.send_command(control_cmd)
-
-                    # Logging at DEBUG level
-                    self.logger.debug(f"Perception: {perception_dict} | Control: {cmd_dict}")
-
-            except Exception as e:
-                self.logger.error(f"Exception in main loop: {e}. Safety protection triggered!", exc_info=True)
+                perception_result = self._read_perception(loop_start)
+                control_cmd = self.control.decide(perception_result)
+                self.serial_io.send_command(control_cmd)
+                self.logger.debug("Perception: %s | Control: %s", perception_result.to_dict(), control_cmd.to_dict())
+            except Exception as exc:
+                self.logger.error("Exception in main loop: %s. Safety protection triggered.", exc, exc_info=True)
                 self._send_emergency_brake()
                 time.sleep(0.5)
 
-            # --- Framerate control ---
-            loop_duration = time.time() - loop_start
-            sleep_time = self.target_loop_time - loop_duration
+            sleep_time = self.target_loop_time - (time.time() - loop_start)
             if sleep_time > 0:
                 time.sleep(sleep_time)
-            elif loop_duration > 0.3:
-                self.logger.warning(
-                    f"System lagging significantly! Loop took {loop_duration*1000:.1f}ms "
-                    f"(May trigger board timeout protection)"
-                )
+
+    def _read_perception(self, timestamp: float) -> PerceptionOutput:
+        if self.mock_mode:
+            return make_mock_perception("clear_path")
+        if self.cap is None or self.perception is None:
+            raise RuntimeError("camera or perception pipeline is not initialized")
+        ok, frame = self.cap.read()
+        if not ok:
+            raise RuntimeError("failed to grab camera frame")
+        return self.perception.process_frame(frame, timestamp=timestamp)

@@ -1,17 +1,17 @@
 runtime:
   target_fps_min: 10.0
   safety_brake_on_lost_ms: 300
-  mock_mode: true   # 改为 false 以使用真实模块
+  mock_mode: true
 
 perception:
   camera_index: 0
-  model_path: "models/yolov8-tiny.pt"
+  device: "cpu"
 
 control:
   serial_port: "/dev/ttyUSB0"
   baud_rate: 115200
 
-serial:    # 如果你的 SerialCommunicator 需要额外参数，可放在这里
+serial:
   port: "/dev/ttyUSB0"
   baud: 115200
 

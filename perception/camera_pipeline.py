@@ -94,6 +94,26 @@ class PerceptionPipeline:
     ) -> "PerceptionPipeline":
         return cls(hazard_provider=build_default_hazard_provider(manifest_path=manifest_path, backend=backend, device=device), **kwargs)
 
+    @classmethod
+    def with_default_models(
+        cls,
+        *,
+        objects_manifest_path: str | Path = DEFAULT_OBJECTS_MANIFEST,
+        traffic_light_manifest_path: str | Path = DEFAULT_TRAFFIC_LIGHT_MANIFEST,
+        laneseg_manifest_path: str | Path = DEFAULT_LANESEG_MANIFEST,
+        hazard_manifest_path: str | Path = DEFAULT_HAZARD_MANIFEST,
+        backend: Any | None = None,
+        device: str | None = None,
+        **kwargs: Any,
+    ) -> "PerceptionPipeline":
+        return cls(
+            detector=build_default_object_detector(manifest_path=objects_manifest_path, backend=backend, device=device),
+            traffic_light_provider=build_default_traffic_light_provider(manifest_path=traffic_light_manifest_path, backend=backend, device=device),
+            laneseg_provider=build_default_laneseg_provider(manifest_path=laneseg_manifest_path, backend=backend, device=device),
+            hazard_provider=build_default_hazard_provider(manifest_path=hazard_manifest_path, backend=backend, device=device),
+            **kwargs,
+        )
+
     def process_frame(self, frame: np.ndarray, *, timestamp: Optional[float] = None, base: Optional[PerceptionOutput] = None) -> PerceptionOutput:
         preprocess_result = preprocess_frame(frame, self.config.preprocess)
         self.last_preprocess_result = preprocess_result

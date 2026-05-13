@@ -17,7 +17,7 @@ import numpy as np
 
 from control.runtime import ControlCommand
 from control.decision import DecisionEngine
-from control.serial_comm import SerialCommunicator
+from control.serial_comm import MockSerialSender, SerialCommandSender
 
 from perception.camera_pipeline import PerceptionPipeline
 from perception.runtime import PerceptionOutput
@@ -111,7 +111,7 @@ class SmartCartApplication:
         self.cap: Optional[cv2.VideoCapture] = None
         self.perception_pipeline: Optional[PerceptionPipeline] = None
         self.decision_engine: Optional[DecisionEngine] = None
-        self.serial_comm: Optional[SerialCommunicator] = None
+        self.serial_comm: Optional[SerialCommandSender | MockSerialSender] = None
 
         # 统计信息
         self.frame_count = 0
@@ -144,7 +144,7 @@ class SmartCartApplication:
 
             # 2. 初始化感知管道（YOLO）
             logger.info("初始化YOLO感知管道...")
-            self.perception_pipeline = PerceptionPipeline.with_default_objects()
+            self.perception_pipeline = PerceptionPipeline.with_default_models()
             logger.info("✅ YOLO感知管道就绪")
 
             # 3. 初始化决策引擎
@@ -154,11 +154,13 @@ class SmartCartApplication:
 
             # 4. 初始化串口通信
             logger.info(f"初始化串口通信...")
-            self.serial_comm = SerialCommunicator(
-                port=self.serial_port,
-                baudrate=self.serial_baudrate,
-                use_mock=self.use_mock_serial,
-            )
+            if self.use_mock_serial:
+                self.serial_comm = MockSerialSender()
+            else:
+                self.serial_comm = SerialCommandSender(
+                    port=self.serial_port,
+                    baudrate=self.serial_baudrate,
+                )
             if not self.serial_comm.connect():
                 logger.error("无法连接串口")
                 return False

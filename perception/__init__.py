@@ -10,6 +10,7 @@ __all__ = [
     "DEFAULT_OBJECTS_MANIFEST",
     "DEFAULT_LANESEG_MANIFEST",
     "DEFAULT_TRAFFIC_LIGHT_MANIFEST",
+    "DEFAULT_HAZARD_MANIFEST",
     "FusionConfig",
     "HAZARD_TYPES",
     "FixedPredictionBackend",
@@ -42,6 +43,7 @@ __all__ = [
     "build_default_laneseg_provider",
     "build_default_object_detector",
     "build_default_traffic_light_provider",
+    "build_default_hazard_provider",
     "build_provider_from_manifest",
     "fuse_perception",
     "list_mock_scenarios",
@@ -85,12 +87,14 @@ def __getattr__(name: str):
         "DEFAULT_LANESEG_MANIFEST",
         "DEFAULT_OBJECTS_MANIFEST",
         "DEFAULT_TRAFFIC_LIGHT_MANIFEST",
+        "DEFAULT_HAZARD_MANIFEST",
         "FrameProvider",
         "PerceptionPipeline",
         "PipelineConfig",
         "build_default_laneseg_provider",
         "build_default_object_detector",
         "build_default_traffic_light_provider",
+        "build_default_hazard_provider",
     }:
         return getattr(import_module("perception.camera_pipeline"), name)
     if name in {"ColorTrafficLightDetector", "TrafficLightDetectionConfig"}:
