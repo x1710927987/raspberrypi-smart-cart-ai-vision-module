@@ -1,23 +1,20 @@
-version: v0
-mode: auto
-
-camera:
-  device_index: 0
-  width: 640
-  height: 480
-  fps: 20
-
-serial:
-  port: COM3
-  baudrate: 115200
-  timeout_sec: 0.2
-  heartbeat_hz: 5
-
 runtime:
-  target_fps_min: 10
+  target_fps_min: 10.0
   safety_brake_on_lost_ms: 300
+  mock_mode: true   # 改为 false 以使用真实模块
+
+perception:
+  camera_index: 0
+  model_path: "models/yolov8-tiny.pt"
+
+control:
+  serial_port: "/dev/ttyUSB0"
+  baud_rate: 115200
+
+serial:    # 如果你的 SerialCommunicator 需要额外参数，可放在这里
+  port: "/dev/ttyUSB0"
+  baud: 115200
 
 logging:
-  level: INFO
-  save_frames: false
-  log_dir: runs/logs
+  level: "DEBUG"
+  log_dir: "logs"
