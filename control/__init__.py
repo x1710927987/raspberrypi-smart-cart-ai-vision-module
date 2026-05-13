@@ -16,7 +16,7 @@ from control.runtime import (
 from control.rules import TrafficRulesEngine, TrafficRulesConfig
 from control.decision import BehaviorDecisionEngine, BehaviorConfig
 from control.serial_comm import SerialCommandSender, MockSerialSender, BoardStatus
-from control.app import SmartCartController
+# from control.app import SmartCartController
 
 __all__ = [
     "ControlMode",
