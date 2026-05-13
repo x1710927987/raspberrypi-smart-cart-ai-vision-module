@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 from perception.runtime import PerceptionOutput
 
 def test_perception_output_has_required_fields():
