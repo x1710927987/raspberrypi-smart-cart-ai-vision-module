@@ -18,6 +18,7 @@ from perception.camera_pipeline import PerceptionPipeline, PipelineConfig
 from perception.fusion import FusionConfig
 from perception.preprocessing import PreprocessConfig
 from perception.runtime import PerceptionOutput
+from io_camera.camera import CameraSource, create_camera_source
 
 
 CLASS_COLORS: dict[str, tuple[int, int, int]] = {
@@ -59,10 +60,13 @@ def draw_perception_overlay(
 def run_live_view(
     *,
     camera_index: int = 0,
+    camera_backend: str = "auto",
     device: str | None = "cpu",
     target_size: tuple[int, int] = (640, 480),
     camera_width: int | None = 640,
     camera_height: int | None = 480,
+    camera_fps: float | None = 30.0,
+    pixel_format: str = "BGR888",
     fps_limit: float = 5.0,
     max_objects: int = 20,
     max_frames: int | None = None,
@@ -70,15 +74,20 @@ def run_live_view(
     display_scale: float = 1.0,
     show_window: bool = True,
     print_json_every: int = 0,
+    save_dir: Path | None = None,
+    save_every: int = 0,
     pipeline: PerceptionPipeline | None = None,
+    camera_source: CameraSource | None = None,
 ) -> int:
-    cap = cv2.VideoCapture(camera_index)
-    if camera_width is not None:
-        cap.set(cv2.CAP_PROP_FRAME_WIDTH, camera_width)
-    if camera_height is not None:
-        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, camera_height)
-    if not cap.isOpened():
-        raise RuntimeError(f"cannot open camera index {camera_index}")
+    active_camera = camera_source or create_camera_source(
+        backend=camera_backend,
+        index=camera_index,
+        width=camera_width,
+        height=camera_height,
+        fps=camera_fps,
+        pixel_format=pixel_format,
+    )
+    active_camera.start()
 
     active_pipeline = pipeline or PerceptionPipeline.with_default_models(
         device=device,
@@ -91,6 +100,8 @@ def run_live_view(
     frame_count = 0
     last_frame_start = 0.0
     min_frame_interval = 1.0 / fps_limit if fps_limit > 0 else 0.0
+    if save_dir is not None:
+        save_dir.mkdir(parents=True, exist_ok=True)
 
     try:
         while True:
@@ -100,9 +111,7 @@ def run_live_view(
                     time.sleep(wait_time)
             last_frame_start = time.perf_counter()
 
-            ok, frame = cap.read()
-            if not ok:
-                raise RuntimeError("failed to read frame from camera")
+            frame = active_camera.read()
 
             tic = time.perf_counter()
             output = active_pipeline.process_frame(frame, timestamp=time.time())
@@ -111,10 +120,28 @@ def run_live_view(
             fps = 1000.0 / elapsed_ms if elapsed_ms > 0 else 0.0
 
             if print_json_every > 0 and frame_count % print_json_every == 0:
-                print(output.to_json(), flush=True)
+                print(
+                    json.dumps(
+                        {
+                            "frame": frame_count,
+                            "infer_ms": round(elapsed_ms, 2),
+                            "output": output.to_dict(),
+                        },
+                        separators=(",", ":"),
+                        ensure_ascii=False,
+                    ),
+                    flush=True,
+                )
 
-            if show_window:
+            should_save = save_dir is not None and save_every > 0 and frame_count % save_every == 0
+            annotated = None
+            if show_window or should_save:
                 annotated = draw_perception_overlay(frame, output, elapsed_ms=elapsed_ms, fps=fps)
+
+            if should_save and annotated is not None:
+                cv2.imwrite(str(save_dir / f"frame_{frame_count:04d}.jpg"), annotated)
+
+            if show_window and annotated is not None:
                 if display_scale != 1.0:
                     annotated = cv2.resize(annotated, None, fx=display_scale, fy=display_scale, interpolation=cv2.INTER_LINEAR)
                 cv2.imshow(window_name, annotated)
@@ -125,7 +152,7 @@ def run_live_view(
             if max_frames is not None and frame_count >= max_frames:
                 break
     finally:
-        cap.release()
+        active_camera.release()
         if show_window:
             cv2.destroyWindow(window_name)
     return frame_count
@@ -221,26 +248,39 @@ def _optional_positive_int(value: str) -> int | None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Show live camera frames annotated with SmartCart perception outputs.")
-    parser.add_argument("--camera", type=int, default=0, help="OpenCV camera index. Default: 0.")
+    parser.add_argument("--camera", type=int, default=0, help="Camera index for OpenCV backend. Default: 0.")
+    parser.add_argument(
+        "--camera-backend",
+        choices=("opencv", "picamera2", "auto"),
+        default="auto",
+        help="Camera backend. Use picamera2 for Raspberry Pi CSI camera, opencv for USB/V4L2. Default: auto.",
+    )
     parser.add_argument("--device", default="cpu", help="Ultralytics device value, for example cpu or 0. Default: cpu.")
     parser.add_argument("--target-size", type=_parse_target_size, default=(640, 480), help="Preprocess size as WIDTHxHEIGHT. Default: 640x480.")
     parser.add_argument("--camera-width", type=_optional_positive_int, default=640, help="Requested camera width. Use 0 to leave unchanged.")
     parser.add_argument("--camera-height", type=_optional_positive_int, default=480, help="Requested camera height. Use 0 to leave unchanged.")
+    parser.add_argument("--camera-fps", type=float, default=30.0, help="Requested camera capture FPS. Default: 30.")
+    parser.add_argument("--pixel-format", default="BGR888", help="Picamera2 pixel format. Default: BGR888.")
     parser.add_argument("--fps", type=float, default=5.0, help="Maximum processing FPS. Use 0 for no cap. Default: 5.")
     parser.add_argument("--max-objects", type=int, default=20, help="Maximum objects kept after fusion. Default: 20.")
     parser.add_argument("--max-frames", type=int, default=None, help="Stop after N frames, useful for checks.")
     parser.add_argument("--window-name", default=DEFAULT_WINDOW_NAME)
     parser.add_argument("--display-scale", type=float, default=1.0, help="Resize display window content, for example 0.75.")
     parser.add_argument("--no-window", action="store_true", help="Run without cv2.imshow; useful for SSH smoke checks.")
-    parser.add_argument("--print-json-every", type=int, default=0, help="Print PerceptionOutput JSON every N frames.")
+    parser.add_argument("--print-json-every", type=int, default=0, help="Print frame metadata and PerceptionOutput JSON every N frames.")
+    parser.add_argument("--save-dir", type=Path, default=None, help="Directory for annotated frame snapshots.")
+    parser.add_argument("--save-every", type=int, default=0, help="Save an annotated frame every N frames when --save-dir is set.")
     args = parser.parse_args()
 
     frames = run_live_view(
         camera_index=args.camera,
+        camera_backend=args.camera_backend,
         device=args.device,
         target_size=args.target_size,
         camera_width=args.camera_width,
         camera_height=args.camera_height,
+        camera_fps=args.camera_fps,
+        pixel_format=args.pixel_format,
         fps_limit=args.fps,
         max_objects=args.max_objects,
         max_frames=args.max_frames,
@@ -248,6 +288,8 @@ def main() -> int:
         display_scale=args.display_scale,
         show_window=not args.no_window,
         print_json_every=args.print_json_every,
+        save_dir=args.save_dir,
+        save_every=args.save_every,
     )
     print(json.dumps({"status": "ok", "frames": frames}, ensure_ascii=False))
     return 0

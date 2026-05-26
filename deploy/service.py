@@ -7,12 +7,12 @@ import time
 from pathlib import Path
 from typing import Any
 
-import cv2
 import yaml
 
 from control.decision import DecisionEngine
 from control.runtime import ControlCommand
 from control.serial_comm import MockSerialSender, SerialCommandSender
+from io_camera.camera import CameraSource, create_camera_source
 from perception.camera_pipeline import PerceptionPipeline
 from perception.mock_perception import make_mock_perception
 from perception.runtime import PerceptionOutput
@@ -33,7 +33,7 @@ class SmartCartService:
         self.perception: PerceptionPipeline | None = None
         self.control: DecisionEngine | None = None
         self.serial_io: SerialCommandSender | MockSerialSender | None = None
-        self.cap: cv2.VideoCapture | None = None
+        self.camera_source: CameraSource | None = None
 
         self.logger.info("System initializing...")
         self._initialize_components()
@@ -56,15 +56,20 @@ class SmartCartService:
 
         if self.mock_mode:
             self.perception = None
-            self.cap = None
+            self.camera_source = None
             self.logger.info("Mock mode enabled; camera and real perception are skipped.")
             return
 
         self.perception = PerceptionPipeline.with_default_models(device=perception_cfg.get("device"))
-        camera_idx = int(perception_cfg.get("camera_index", 0))
-        self.cap = cv2.VideoCapture(camera_idx)
-        if not self.cap.isOpened():
-            raise RuntimeError(f"cannot open camera index {camera_idx}")
+        self.camera_source = create_camera_source(
+            backend=str(perception_cfg.get("camera_backend", "auto")),
+            index=int(perception_cfg.get("camera_index", 0)),
+            width=int(perception_cfg.get("camera_width", 640)),
+            height=int(perception_cfg.get("camera_height", 480)),
+            fps=float(perception_cfg.get("camera_fps", 30.0)),
+            pixel_format=str(perception_cfg.get("pixel_format", "BGR888")),
+        )
+        self.camera_source.start()
 
     @staticmethod
     def _load_config(path: str | os.PathLike[str]) -> dict[str, Any]:
@@ -117,8 +122,9 @@ class SmartCartService:
         self.logger.warning("Stopping system; dispatching emergency brake command.")
         self.running = False
         self._send_emergency_brake()
-        if self.cap is not None:
-            self.cap.release()
+        if self.camera_source is not None:
+            self.camera_source.release()
+            self.camera_source = None
         if self.serial_io is not None:
             self.serial_io.disconnect()
         self.logger.info("System safely stopped.")
@@ -149,9 +155,7 @@ class SmartCartService:
     def _read_perception(self, timestamp: float) -> PerceptionOutput:
         if self.mock_mode:
             return make_mock_perception("clear_path")
-        if self.cap is None or self.perception is None:
+        if self.camera_source is None or self.perception is None:
             raise RuntimeError("camera or perception pipeline is not initialized")
-        ok, frame = self.cap.read()
-        if not ok:
-            raise RuntimeError("failed to grab camera frame")
+        frame = self.camera_source.read()
         return self.perception.process_frame(frame, timestamp=timestamp)

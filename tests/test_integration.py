@@ -8,7 +8,6 @@ Quick integration test - YOLO感知 + 控制系统端到端测试
 
 import logging
 import time
-import cv2
 import numpy as np
 from pathlib import Path
 
@@ -154,13 +153,15 @@ def test_with_real_camera():
     print("=" * 70)
 
     try:
-        import cv2
         from perception import PerceptionPipeline
         from control.decision import DecisionEngine
+        from io_camera.camera import create_camera_source
 
         logger.info("尝试打开摄像头...")
-        cap = cv2.VideoCapture(0)
-        if not cap.isOpened():
+        camera_source = create_camera_source(backend="auto", index=0, width=640, height=480, fps=30)
+        try:
+            camera_source.start()
+        except RuntimeError:
             logger.warning("⚠️  摄像头不可用，跳过此测试")
             return True
 
@@ -174,9 +175,7 @@ def test_with_real_camera():
         logger.info("处理5帧真实视频... (按 Ctrl+C 停止)")
 
         for i in range(5):
-            ret, frame = cap.read()
-            if not ret:
-                break
+            frame = camera_source.read()
 
             # 感知处理
             start_time = time.time()
@@ -197,7 +196,7 @@ def test_with_real_camera():
 
             time.sleep(0.5)  # 模拟处理
 
-        cap.release()
+        camera_source.release()
         print("\n✅ 真实摄像头测试完成！")
         return True
 
@@ -254,7 +253,8 @@ def main():
         print("\n现在可以运行主程序：")
         print("  python control/app.py [选项]")
         print("\n选项：")
-        print("  --camera 0          摄像头设备ID (默认: 0)")
+        print("  --camera-backend auto|picamera2|opencv")
+        print("  --camera 0          OpenCV camera index (default: 0)")
         print("  --port /dev/ttyUSB0 串口端口")
         print("  --mock-serial       使用模拟串口（测试）")
         print("  --fps 10            目标帧率 (默认: 10)")

@@ -42,6 +42,8 @@ sudo apt install -y \
   python3 \
   python3-venv \
   python3-pip \
+  python3-picamera2 \
+  rpicam-apps \
   libgl1 \
   libglib2.0-0 \
   v4l-utils \
@@ -112,10 +114,12 @@ git lfs pull
 创建虚拟环境：
 
 ```bash
-python3 -m venv .venv
+python3 -m venv --system-site-packages .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip setuptools wheel
 ```
+
+这里使用 `--system-site-packages` 是为了让虚拟环境能直接访问 Raspberry Pi OS 通过 apt 安装的 `picamera2`。
 
 确认 Python 版本：
 
@@ -290,10 +294,10 @@ v4l2-ctl --list-devices
 /dev/video0
 ```
 
-用 OpenCV 测试：
+CSI 摄像头默认用 Picamera2 测试：
 
 ```bash
-python -c "import cv2; cap=cv2.VideoCapture(0); print(cap.isOpened()); cap.release()"
+python -c "from picamera2 import Picamera2; cam=Picamera2(); cam.configure(cam.create_video_configuration(main={'format':'BGR888','size':(640,480)})); cam.start(); frame=cam.capture_array(); print(frame.shape); cam.stop(); cam.close()"
 ```
 
 期望输出：
@@ -310,22 +314,22 @@ True
 rpicam-hello --timeout 3000
 ```
 
-如果 `rpicam-hello` 可用，但 OpenCV 的 `VideoCapture(0)` 不可用，说明当前相机走的是 libcamera 栈，而不是普通 V4L2 设备。此时有三种方案：
+如果 `rpicam-hello` 可用，但 OpenCV 的 `VideoCapture(0)` 不可用，说明 CSI 相机走的是 libcamera 栈。当前项目已经支持 Picamera2，CSI 摄像头直接使用 `--camera-backend picamera2`：
 
 ```text
-1. 使用 USB 摄像头进行项目验收，最省时间。
-2. 配置 libcamera 到 V4L2 兼容设备。
-3. 后续把项目摄像头输入改成 Picamera2，再把帧传给 PerceptionPipeline.process_frame(frame)。
+1. CSI 排线摄像头：使用 --camera-backend picamera2。
+2. USB 摄像头：使用 --camera-backend opencv --camera <index>。
+3. 不确定时：使用 --camera-backend auto，程序会先尝试 Picamera2，再回退到 OpenCV。
 ```
 
-阶段验收建议优先使用 USB 摄像头。
+阶段验收建议在 Raspberry Pi 5 上优先使用 Picamera2 跑 CSI 摄像头。
 
 ### 7.3 在 VNC 上查看实时识别画面
 
 如果已经通过 VNC 打开 Raspberry Pi 桌面，可以运行实时可视化工具：
 
 ```bash
-python tools/run_perception_live_view.py --camera 0 --device cpu --fps 3
+python tools/run_perception_live_view.py --camera-backend picamera2 --device cpu --fps 3
 ```
 
 这个窗口会显示：
@@ -347,18 +351,21 @@ traffic_light / laneseg / hazard 当前状态文本
 如果摄像头不是 `0`，换成实际编号：
 
 ```bash
-python tools/run_perception_live_view.py --camera 1 --device cpu --fps 3
+python tools/run_perception_live_view.py --camera-backend opencv --camera 1 --device cpu --fps 3
 ```
 
 如果通过 SSH 远程检查、暂时没有 VNC 图形窗口，可以用无窗口模式跑几帧：
 
 ```bash
 python tools/run_perception_live_view.py \
+  --camera-backend picamera2 \
   --camera 0 \
   --device cpu \
   --no-window \
   --max-frames 5 \
-  --print-json-every 1
+  --print-json-every 1 \
+  --save-dir cache/live_view_frames \
+  --save-every 1
 ```
 
 如果 VNC 中无法弹出窗口，请确认：
@@ -430,7 +437,12 @@ runtime:
   mock_mode: true
 
 perception:
+  camera_backend: "picamera2"
   camera_index: 0
+  camera_width: 640
+  camera_height: 480
+  camera_fps: 30
+  pixel_format: "BGR888"
   device: "cpu"
 
 serial:
@@ -459,13 +471,13 @@ mock 模式下：
 如果想测试真实摄像头和真实四模型 pipeline，但暂时不接控制板，可以暂时使用 `control/app.py` 的 mock 串口入口：
 
 ```bash
-python control/app.py --camera 0 --mock-serial --fps 5
+python control/app.py --camera-backend picamera2 --mock-serial --fps 5
 ```
 
 如果需要观察实时识别效果，优先使用可视化工具：
 
 ```bash
-python tools/run_perception_live_view.py --camera 0 --device cpu --fps 3
+python tools/run_perception_live_view.py --camera-backend picamera2 --device cpu --fps 3
 ```
 
 注意：首次加载四个 `.pt` 模型会比较慢。第一帧推理通常明显慢于后续帧，这是正常现象。
@@ -473,7 +485,7 @@ python tools/run_perception_live_view.py --camera 0 --device cpu --fps 3
 如果摄像头不是 `0`，改成实际编号：
 
 ```bash
-python control/app.py --camera 1 --mock-serial --fps 5
+python control/app.py --camera-backend opencv --camera 1 --mock-serial --fps 5
 ```
 
 ## 11. 切换到真实串口运行
@@ -482,7 +494,7 @@ python control/app.py --camera 1 --mock-serial --fps 5
 
 ```text
 统一感知 smoke test 通过
-摄像头 OpenCV 测试通过
+CSI 摄像头 Picamera2 测试通过
 mock 主服务能启动
 串口设备存在
 当前用户有 dialout 权限
@@ -496,7 +508,12 @@ runtime:
   mock_mode: false
 
 perception:
+  camera_backend: "picamera2"
   camera_index: 0
+  camera_width: 640
+  camera_height: 480
+  camera_fps: 30
+  pixel_format: "BGR888"
   device: "cpu"
 
 serial:
@@ -668,7 +685,7 @@ python -c "import torch; print(torch.__version__)"
 现象：
 
 ```text
-cv2.VideoCapture(0).isOpened() 返回 False
+Picamera2 无法启动，或 USB 摄像头的 cv2.VideoCapture(0).isOpened() 返回 False
 ```
 
 检查设备：
@@ -681,7 +698,7 @@ v4l2-ctl --list-devices
 尝试换编号：
 
 ```bash
-python -c "import cv2; cap=cv2.VideoCapture(1); print(cap.isOpened()); cap.release()"
+python tools/run_perception_live_view.py --camera-backend opencv --camera 1 --device cpu --no-window --max-frames 5
 ```
 
 如果是 Raspberry Pi Camera：
@@ -690,7 +707,7 @@ python -c "import cv2; cap=cv2.VideoCapture(1); print(cap.isOpened()); cap.relea
 rpicam-hello --timeout 3000
 ```
 
-如果 `rpicam-hello` 正常但 OpenCV 不正常，建议先换 USB 摄像头完成验收，后续再接 Picamera2 输入。
+如果 `rpicam-hello` 正常但 OpenCV 不正常，请直接使用 `--camera-backend picamera2`；如果 USB 摄像头正常但 CSI 不正常，请改用 `--camera-backend opencv --camera <index>` 做临时验收。
 
 ### 13.6 串口权限不足
 
@@ -823,7 +840,7 @@ python run.py
 [ ] cv2 / torch / ultralytics / yaml / serial 都能 import
 [ ] check_model_manifest.py 四个 manifest 都通过
 [ ] run_perception_pipeline_smoke.py 输出 status=ok
-[ ] 摄像头 OpenCV 测试通过
+[ ] CSI 摄像头 Picamera2 测试通过，或 USB 摄像头 OpenCV 测试通过
 [ ] run_perception_live_view.py 能在 VNC 中显示实时识别画面，或无窗口模式能输出 JSON
 [ ] mock_mode=true 的 deploy/run.py 能启动
 [ ] 串口设备存在

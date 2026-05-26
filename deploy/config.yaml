@@ -4,7 +4,12 @@ runtime:
   mock_mode: true
 
 perception:
+  camera_backend: "picamera2"
   camera_index: 0
+  camera_width: 640
+  camera_height: 480
+  camera_fps: 30
+  pixel_format: "BGR888"
   device: "cpu"
 
 control:

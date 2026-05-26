@@ -1,7 +1,9 @@
 import importlib.util
+import json
 import sys
 import time
 from pathlib import Path
+from uuid import uuid4
 
 import numpy as np
 
@@ -33,11 +35,10 @@ def test_draw_perception_overlay_draws_objects_and_status_panel():
     assert not np.array_equal(annotated[20, 20], frame[20, 20])
 
 
-def test_run_live_view_without_window_processes_limited_frames(monkeypatch):
+def test_run_live_view_without_window_processes_limited_frames():
     script = _load_script()
     frames = [np.zeros((80, 100, 3), dtype=np.uint8) for _ in range(3)]
-    fake_capture = _FakeCapture(frames)
-    monkeypatch.setattr(script.cv2, "VideoCapture", lambda camera_index: fake_capture)
+    fake_source = _FakeCameraSource(frames)
 
     count = script.run_live_view(
         camera_index=0,
@@ -45,10 +46,37 @@ def test_run_live_view_without_window_processes_limited_frames(monkeypatch):
         max_frames=2,
         fps_limit=0,
         pipeline=_FakePipeline(),
+        camera_source=fake_source,
     )
 
     assert count == 2
-    assert fake_capture.released is True
+    assert fake_source.started is True
+    assert fake_source.released is True
+
+
+def test_run_live_view_can_save_annotated_frames_and_print_json(capsys):
+    script = _load_script()
+    frames = [np.zeros((80, 100, 3), dtype=np.uint8) for _ in range(2)]
+    fake_source = _FakeCameraSource(frames)
+    workspace = REPO_ROOT / "cache" / "pytest" / "test_run_perception_live_view" / uuid4().hex
+
+    count = script.run_live_view(
+        show_window=False,
+        max_frames=2,
+        fps_limit=0,
+        pipeline=_FakePipeline(),
+        camera_source=fake_source,
+        save_dir=workspace,
+        save_every=1,
+        print_json_every=1,
+    )
+
+    assert count == 2
+    assert (workspace / "frame_0001.jpg").exists()
+    assert (workspace / "frame_0002.jpg").exists()
+    lines = [json.loads(line) for line in capsys.readouterr().out.splitlines()]
+    assert [line["frame"] for line in lines] == [1, 2]
+    assert lines[0]["output"]["traffic_light"]["state"] == "green"
 
 
 def test_clamp_bbox_rejects_invalid_bbox_length():
@@ -72,24 +100,22 @@ def _sample_output() -> PerceptionOutput:
     )
 
 
-class _FakeCapture:
+class _FakeCameraSource:
     def __init__(self, frames):
         self.frames = list(frames)
         self.index = 0
+        self.started = False
         self.released = False
 
-    def isOpened(self):
-        return True
-
-    def set(self, prop, value):
-        return True
+    def start(self):
+        self.started = True
 
     def read(self):
         if self.index >= len(self.frames):
-            return False, None
+            raise RuntimeError("no frame")
         frame = self.frames[self.index]
         self.index += 1
-        return True, frame
+        return frame
 
     def release(self):
         self.released = True
