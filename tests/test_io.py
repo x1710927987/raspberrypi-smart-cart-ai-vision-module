@@ -97,6 +97,24 @@ def test_picamera2_source_reads_bgr_frame_and_closes():
     assert fake_camera_class.instance.controls is None
 
 
+def test_picamera2_source_raises_on_read_timeout():
+    fake_camera_class = _FakePicamera2Factory(np.ones((1, 1, 3), dtype=np.uint8), hanging_job=True)
+    source = PiCamera2Source(
+        CameraConfig(backend="picamera2", width=1, height=1, read_timeout_seconds=0.01, warmup_seconds=0),
+        picamera2_class=fake_camera_class,
+    )
+
+    source.start()
+    try:
+        source.read()
+    except RuntimeError as exc:
+        assert "timed out reading frame" in str(exc)
+    else:
+        raise AssertionError("expected RuntimeError")
+    finally:
+        source.release()
+
+
 def test_picamera2_source_applies_explicit_frame_rate_control():
     frame = np.ones((8, 12, 3), dtype=np.uint8)
     fake_camera_class = _FakePicamera2Factory(frame)
@@ -167,18 +185,20 @@ class _FakeCV2:
 
 
 class _FakePicamera2Factory:
-    def __init__(self, frame):
+    def __init__(self, frame, *, hanging_job=False):
         self.frame = frame
+        self.hanging_job = hanging_job
         self.instance = None
 
     def __call__(self):
-        self.instance = _FakePicamera2(self.frame)
+        self.instance = _FakePicamera2(self.frame, hanging_job=self.hanging_job)
         return self.instance
 
 
 class _FakePicamera2:
-    def __init__(self, frame):
+    def __init__(self, frame, *, hanging_job=False):
         self.frame = frame
+        self.hanging_job = hanging_job
         self.started = False
         self.stopped = False
         self.closed = False
@@ -196,7 +216,9 @@ class _FakePicamera2:
     def start(self):
         self.started = True
 
-    def capture_array(self):
+    def capture_array(self, wait=True):
+        if not wait:
+            return _FakeCaptureJob(self.frame, hanging=self.hanging_job)
         return self.frame
 
     def stop(self):
@@ -204,3 +226,16 @@ class _FakePicamera2:
 
     def close(self):
         self.closed = True
+
+
+class _FakeCaptureJob:
+    def __init__(self, frame, *, hanging=False):
+        self.frame = frame
+        self.hanging = hanging
+
+    def get_result(self, timeout=None):
+        if self.hanging:
+            from concurrent.futures import TimeoutError as FutureTimeoutError
+
+            raise FutureTimeoutError()
+        return self.frame

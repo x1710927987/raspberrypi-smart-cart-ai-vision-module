@@ -67,6 +67,8 @@ def run_live_view(
     camera_height: int | None = 480,
     camera_fps: float | None = None,
     pixel_format: str = "BGR888",
+    camera_read_timeout: float = 2.0,
+    camera_stop_timeout: float = 2.0,
     fps_limit: float = 5.0,
     max_objects: int = 20,
     max_frames: int | None = None,
@@ -86,6 +88,8 @@ def run_live_view(
         height=camera_height,
         fps=camera_fps,
         pixel_format=pixel_format,
+        read_timeout_seconds=camera_read_timeout,
+        stop_timeout_seconds=camera_stop_timeout,
     )
     active_camera.start()
 
@@ -268,6 +272,8 @@ def main() -> int:
     parser.add_argument("--camera-height", type=_optional_positive_int, default=480, help="Requested camera height. Use 0 to leave unchanged.")
     parser.add_argument("--camera-fps", type=_optional_positive_float, default=None, help="Requested camera capture FPS. Use 0 to let Picamera2 choose. Default: auto.")
     parser.add_argument("--pixel-format", default="BGR888", help="Picamera2 pixel format. Default: BGR888.")
+    parser.add_argument("--camera-read-timeout", type=float, default=2.0, help="Camera read timeout seconds. Default: 2.0.")
+    parser.add_argument("--camera-stop-timeout", type=float, default=2.0, help="Camera stop/close timeout seconds. Default: 2.0.")
     parser.add_argument("--fps", type=float, default=5.0, help="Maximum processing FPS. Use 0 for no cap. Default: 5.")
     parser.add_argument("--max-objects", type=int, default=20, help="Maximum objects kept after fusion. Default: 20.")
     parser.add_argument("--max-frames", type=int, default=None, help="Stop after N frames, useful for checks.")
@@ -288,6 +294,8 @@ def main() -> int:
         camera_height=args.camera_height,
         camera_fps=args.camera_fps,
         pixel_format=args.pixel_format,
+        camera_read_timeout=args.camera_read_timeout,
+        camera_stop_timeout=args.camera_stop_timeout,
         fps_limit=args.fps,
         max_objects=args.max_objects,
         max_frames=args.max_frames,

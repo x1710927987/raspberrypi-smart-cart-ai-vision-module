@@ -711,7 +711,30 @@ rpicam-hello --timeout 3000
 
 如果 `rpicam-hello` 正常但 OpenCV 不正常，请直接使用 `--camera-backend picamera2`；如果 USB 摄像头正常但 CSI 不正常，请改用 `--camera-backend opencv --camera <index>` 做临时验收。
 
-### 13.6 串口权限不足
+### 13.6 Picamera2 抓帧超时
+
+现象：
+```text
+Camera frontend has timed out
+timed out reading frame from Picamera2
+```
+
+这通常是 libcamera 没有从 CSI 传感器拿到帧，不是 YOLO 模型或控制逻辑问题。先检查：
+```bash
+sudo fuser -v /dev/video* /dev/media*
+rpicam-hello --timeout 5000
+python -c "from picamera2 import Picamera2; cam=Picamera2(); cam.configure(cam.create_video_configuration(main={'format':'BGR888','size':(640,480)})); cam.start(); print(cam.capture_array().shape); cam.stop(); cam.close()"
+```
+
+处理建议：
+```text
+1. 确认没有其他 rpicam / python / VNC 摄像头进程占用相机。
+2. 断电后重新插拔 CSI 排线，确认蓝色面和接口方向正确，卡扣压紧。
+3. 优先用 rpicam-hello 验证硬件；如果 rpicam-hello 也超时，基本就是排线、接口或摄像头模块问题。
+4. 如果只在本项目中超时，可临时增大 --camera-read-timeout 或降低分辨率，例如 --camera-width 320 --camera-height 240。
+```
+
+### 13.7 串口权限不足
 
 现象：
 
@@ -734,7 +757,7 @@ groups
 
 确认包含 `dialout`。
 
-### 13.7 找不到 `/dev/ttyUSB0`
+### 13.8 找不到 `/dev/ttyUSB0`
 
 检查：
 
@@ -760,7 +783,7 @@ serial:
   baud: 115200
 ```
 
-### 13.8 推理很慢，FPS 不够
+### 13.9 推理很慢，FPS 不够
 
 `.pt` 模型在 Raspberry Pi CPU 上可能较慢。先记录实际耗时：
 
@@ -793,7 +816,7 @@ yolo export model=models/weights/smartcart_objects_yolov8n_combined_v3_pt_v1.pt 
 
 注意：导出后的模型还不能自动被当前 manifest 使用，需要后续补充 backend 或登记新的 manifest。当前阶段先用 `.pt` 跑通部署链路。
 
-### 13.9 运行中温度过高
+### 13.10 运行中温度过高
 
 查看温度：
 
@@ -810,7 +833,7 @@ vcgencmd measure_temp
 避免长时间满载无散热测试
 ```
 
-### 13.10 `deploy/run.py` 无法导入项目模块
+### 13.11 `deploy/run.py` 无法导入项目模块
 
 确保在项目根目录运行：
 

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import threading
 import time
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from dataclasses import dataclass
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 import numpy as np
 
@@ -30,6 +32,8 @@ class CameraConfig:
     fps: float | None = None
     pixel_format: str = "BGR888"
     warmup_seconds: float = 1.0
+    read_timeout_seconds: float = 2.0
+    stop_timeout_seconds: float = 2.0
 
 
 class OpenCVCameraSource:
@@ -91,7 +95,21 @@ class PiCamera2Source:
     def read(self) -> np.ndarray:
         if self._camera is None:
             raise RuntimeError("Picamera2 source is not started")
-        frame = self._camera.capture_array()
+        try:
+            job_or_frame = self._camera.capture_array(wait=False)
+        except TypeError:
+            job_or_frame = self._camera.capture_array()
+        if hasattr(job_or_frame, "get_result"):
+            try:
+                frame = job_or_frame.get_result(timeout=self.config.read_timeout_seconds)
+            except FutureTimeoutError as exc:
+                raise RuntimeError(
+                    "timed out reading frame from Picamera2 after "
+                    f"{self.config.read_timeout_seconds:.1f}s; check CSI cable seating, camera module, "
+                    "and whether another process is holding the camera"
+                ) from exc
+        else:
+            frame = job_or_frame
         if frame is None:
             raise RuntimeError("failed to read frame from Picamera2")
         return _ensure_bgr_frame(np.asarray(frame), pixel_format=self.config.pixel_format)
@@ -101,9 +119,9 @@ class PiCamera2Source:
             stop = getattr(self._camera, "stop", None)
             close = getattr(self._camera, "close", None)
             if callable(stop):
-                stop()
+                _call_with_timeout(stop, timeout_seconds=self.config.stop_timeout_seconds)
             if callable(close):
-                close()
+                _call_with_timeout(close, timeout_seconds=self.config.stop_timeout_seconds)
             self._camera = None
 
 
@@ -146,6 +164,8 @@ def create_camera_source(
     fps: float | None = None,
     pixel_format: str = "BGR888",
     warmup_seconds: float = 1.0,
+    read_timeout_seconds: float = 2.0,
+    stop_timeout_seconds: float = 2.0,
 ) -> CameraSource:
     normalized_backend = backend.strip().lower()
     if normalized_backend not in CAMERA_BACKENDS:
@@ -158,6 +178,8 @@ def create_camera_source(
         fps=fps,
         pixel_format=pixel_format,
         warmup_seconds=warmup_seconds,
+        read_timeout_seconds=read_timeout_seconds,
+        stop_timeout_seconds=stop_timeout_seconds,
     )
     return _build_camera_source(config, backend=normalized_backend)
 
@@ -185,6 +207,21 @@ def _ensure_bgr_frame(frame: np.ndarray, *, pixel_format: str = "BGR888") -> np.
         frame3 = frame[:, :, :3]
         return frame3[:, :, ::-1].copy() if rgb_oriented else frame3
     raise RuntimeError(f"camera frame must have 3 or 4 channels, got shape {frame.shape}")
+
+
+def _call_with_timeout(func: Callable[[], Any], *, timeout_seconds: float) -> bool:
+    done = threading.Event()
+
+    def runner() -> None:
+        try:
+            func()
+        finally:
+            done.set()
+
+    thread = threading.Thread(target=runner, daemon=True)
+    thread.start()
+    thread.join(max(0.0, timeout_seconds))
+    return done.is_set()
 
 
 def _import_cv2() -> Any:
