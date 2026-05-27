@@ -10,6 +10,7 @@ import numpy as np
 
 
 CAMERA_BACKENDS = {"opencv", "picamera2", "auto"}
+CAMERA_COLOR_ORDERS = {"auto", "rgb", "bgr"}
 
 
 class CameraSource(Protocol):
@@ -31,6 +32,7 @@ class CameraConfig:
     height: int | None = 480
     fps: float | None = None
     pixel_format: str = "RGB888"
+    color_order: str = "bgr"
     warmup_seconds: float = 1.0
     read_timeout_seconds: float = 2.0
     stop_timeout_seconds: float = 2.0
@@ -112,7 +114,11 @@ class PiCamera2Source:
             frame = job_or_frame
         if frame is None:
             raise RuntimeError("failed to read frame from Picamera2")
-        return _ensure_bgr_frame(np.asarray(frame), pixel_format=self.config.pixel_format)
+        return _ensure_bgr_frame(
+            np.asarray(frame),
+            pixel_format=self.config.pixel_format,
+            color_order=self.config.color_order,
+        )
 
     def release(self) -> None:
         if self._camera is not None:
@@ -163,6 +169,7 @@ def create_camera_source(
     height: int | None = 480,
     fps: float | None = None,
     pixel_format: str = "RGB888",
+    color_order: str = "bgr",
     warmup_seconds: float = 1.0,
     read_timeout_seconds: float = 2.0,
     stop_timeout_seconds: float = 2.0,
@@ -170,6 +177,9 @@ def create_camera_source(
     normalized_backend = backend.strip().lower()
     if normalized_backend not in CAMERA_BACKENDS:
         raise ValueError(f"camera backend must be one of {sorted(CAMERA_BACKENDS)}, got {backend!r}")
+    normalized_color_order = color_order.strip().lower()
+    if normalized_color_order not in CAMERA_COLOR_ORDERS:
+        raise ValueError(f"camera color order must be one of {sorted(CAMERA_COLOR_ORDERS)}, got {color_order!r}")
     config = CameraConfig(
         backend=normalized_backend,
         index=index,
@@ -177,6 +187,7 @@ def create_camera_source(
         height=height,
         fps=fps,
         pixel_format=pixel_format,
+        color_order=normalized_color_order,
         warmup_seconds=warmup_seconds,
         read_timeout_seconds=read_timeout_seconds,
         stop_timeout_seconds=stop_timeout_seconds,
@@ -194,18 +205,31 @@ def _build_camera_source(config: CameraConfig, *, backend: str) -> CameraSource:
     raise ValueError(f"unsupported camera backend: {backend!r}")
 
 
-def _ensure_bgr_frame(frame: np.ndarray, *, pixel_format: str = "RGB888") -> np.ndarray:
+def _ensure_bgr_frame(
+    frame: np.ndarray,
+    *,
+    pixel_format: str = "RGB888",
+    color_order: str = "bgr",
+) -> np.ndarray:
     if frame.ndim != 3:
         raise RuntimeError(f"camera frame must be HxWxC, got shape {frame.shape}")
     normalized_format = pixel_format.strip().upper()
+    normalized_order = color_order.strip().lower()
+    if normalized_order == "auto":
+        is_rgb_order = normalized_format in {"RGB", "RGB888"} or normalized_format.startswith("RGBA")
+    elif normalized_order == "rgb":
+        is_rgb_order = True
+    elif normalized_order == "bgr":
+        is_rgb_order = False
+    else:
+        raise RuntimeError(f"camera color order must be one of {sorted(CAMERA_COLOR_ORDERS)}, got {color_order!r}")
     if frame.shape[2] == 3:
-        if normalized_format in {"RGB", "RGB888"}:
+        if is_rgb_order:
             return frame[:, :, ::-1].copy()
         return frame
     if frame.shape[2] == 4:
-        rgb_oriented = normalized_format.startswith("RGB") or normalized_format.startswith("RGBA")
         frame3 = frame[:, :, :3]
-        return frame3[:, :, ::-1].copy() if rgb_oriented else frame3
+        return frame3[:, :, ::-1].copy() if is_rgb_order else frame3
     raise RuntimeError(f"camera frame must have 3 or 4 channels, got shape {frame.shape}")
 
 

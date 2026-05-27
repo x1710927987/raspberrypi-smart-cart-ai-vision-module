@@ -13,6 +13,7 @@ perception:
   camera_read_timeout_seconds: 2.0
   camera_stop_timeout_seconds: 2.0
   pixel_format: "RGB888"
+  camera_color_order: "bgr"
   device: "cpu"
 
 control:

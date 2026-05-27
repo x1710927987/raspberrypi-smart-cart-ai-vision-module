@@ -80,9 +80,9 @@ def test_opencv_camera_source_reads_frame_and_releases():
     ]
 
 
-def test_picamera2_source_reads_rgb888_as_bgr_and_closes():
+def test_picamera2_source_defaults_to_bgr_array_order_and_closes():
     frame = np.zeros((8, 12, 3), dtype=np.uint8)
-    frame[0, 0] = [10, 20, 30]
+    frame[0, 0] = [30, 20, 10]
     fake_camera_class = _FakePicamera2Factory(frame)
     source = PiCamera2Source(CameraConfig(backend="picamera2", width=12, height=8, warmup_seconds=0), picamera2_class=fake_camera_class)
 
@@ -131,11 +131,26 @@ def test_picamera2_source_applies_explicit_frame_rate_control():
     assert fake_camera_class.instance.controls == {"FrameRate": 15.0}
 
 
-def test_picamera2_source_converts_rgb888_to_bgr():
+def test_picamera2_source_converts_rgb_order_to_bgr():
     frame = np.array([[[10, 20, 30]]], dtype=np.uint8)
     fake_camera_class = _FakePicamera2Factory(frame)
     source = PiCamera2Source(
-        CameraConfig(backend="picamera2", width=1, height=1, pixel_format="RGB888", warmup_seconds=0),
+        CameraConfig(backend="picamera2", width=1, height=1, pixel_format="RGB888", color_order="rgb", warmup_seconds=0),
+        picamera2_class=fake_camera_class,
+    )
+
+    source.start()
+    read_frame = source.read()
+    source.release()
+
+    assert read_frame.tolist() == [[[30, 20, 10]]]
+
+
+def test_picamera2_source_auto_color_order_uses_pixel_format():
+    frame = np.array([[[10, 20, 30]]], dtype=np.uint8)
+    fake_camera_class = _FakePicamera2Factory(frame)
+    source = PiCamera2Source(
+        CameraConfig(backend="picamera2", width=1, height=1, pixel_format="RGB888", color_order="auto", warmup_seconds=0),
         picamera2_class=fake_camera_class,
     )
 
@@ -166,6 +181,15 @@ def test_create_camera_source_rejects_unknown_backend():
         create_camera_source(backend="unknown")
     except ValueError as exc:
         assert "camera backend" in str(exc)
+    else:
+        raise AssertionError("expected ValueError")
+
+
+def test_create_camera_source_rejects_unknown_color_order():
+    try:
+        create_camera_source(backend="picamera2", color_order="cmyk")
+    except ValueError as exc:
+        assert "camera color order" in str(exc)
     else:
         raise AssertionError("expected ValueError")
 

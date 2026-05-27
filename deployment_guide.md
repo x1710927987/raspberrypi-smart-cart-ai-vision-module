@@ -444,6 +444,7 @@ perception:
   camera_fps:
   camera_warmup_seconds: 1.0
   pixel_format: "RGB888"
+  camera_color_order: "bgr"
   device: "cpu"
 
 serial:
@@ -516,6 +517,7 @@ perception:
   camera_fps:
   camera_warmup_seconds: 1.0
   pixel_format: "RGB888"
+  camera_color_order: "bgr"
   device: "cpu"
 
 serial:
@@ -745,6 +747,7 @@ rpicam-hello 预览颜色正常，但 run_perception_live_view.py 保存或显�
 ```bash
 python tools/run_perception_live_view.py \
   --camera-backend picamera2 \
+  --camera-color-order bgr \
   --pixel-format RGB888 \
   --device cpu \
   --fps 3 \
@@ -757,8 +760,9 @@ python tools/run_perception_live_view.py \
 说明：
 ```text
 项目内部的 OpenCV、YOLO 和可视化统一使用 BGR 图像。
-Picamera2 默认请求 RGB888，再由 io_camera.camera.PiCamera2Source 转换为 BGR。
-如果手动改成 BGR888 后出现蓝脸、红蓝互换，请改回 RGB888。
+Picamera2 请求格式和 capture_array 返回数组的实际通道顺序在不同系统配置下可能不完全符合直觉。
+当前项目默认使用 pixel_format=RGB888、camera_color_order=bgr，也就是把 Picamera2 返回数组直接按 OpenCV BGR 处理。
+如果仍然出现蓝脸、红蓝互换，请尝试把 --camera-color-order 改成 rgb。
 ```
 
 ### 13.8 串口权限不足

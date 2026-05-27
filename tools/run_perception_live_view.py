@@ -67,6 +67,7 @@ def run_live_view(
     camera_height: int | None = 480,
     camera_fps: float | None = None,
     pixel_format: str = "RGB888",
+    camera_color_order: str = "bgr",
     camera_read_timeout: float = 2.0,
     camera_stop_timeout: float = 2.0,
     fps_limit: float = 5.0,
@@ -88,6 +89,7 @@ def run_live_view(
         height=camera_height,
         fps=camera_fps,
         pixel_format=pixel_format,
+        color_order=camera_color_order,
         read_timeout_seconds=camera_read_timeout,
         stop_timeout_seconds=camera_stop_timeout,
     )
@@ -276,6 +278,12 @@ def main() -> int:
         default="RGB888",
         help="Picamera2 pixel format before conversion to OpenCV BGR. Default: RGB888.",
     )
+    parser.add_argument(
+        "--camera-color-order",
+        choices=("bgr", "rgb", "auto"),
+        default="bgr",
+        help="Actual channel order returned by the camera array before OpenCV drawing/saving. Default: bgr.",
+    )
     parser.add_argument("--camera-read-timeout", type=float, default=2.0, help="Camera read timeout seconds. Default: 2.0.")
     parser.add_argument("--camera-stop-timeout", type=float, default=2.0, help="Camera stop/close timeout seconds. Default: 2.0.")
     parser.add_argument("--fps", type=float, default=5.0, help="Maximum processing FPS. Use 0 for no cap. Default: 5.")
@@ -298,6 +306,7 @@ def main() -> int:
         camera_height=args.camera_height,
         camera_fps=args.camera_fps,
         pixel_format=args.pixel_format,
+        camera_color_order=args.camera_color_order,
         camera_read_timeout=args.camera_read_timeout,
         camera_stop_timeout=args.camera_stop_timeout,
         fps_limit=args.fps,
