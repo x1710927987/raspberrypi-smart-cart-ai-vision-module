@@ -4,7 +4,7 @@ This repository contains the development work of the AI vision control module fo
 
 ## Project Overview
 
-The project is developed based on a Raspberry Pi (or other development boards with AI inference capability) and Python programming language. It realizes real-time road condition image collection via the cart's camera, intelligent analysis of the sidewalk environment, and vehicle driving instruction output.
+The project is developed based on Raspberry Pi 5 and Python. The current stage uses a Raspberry Pi Camera Rev 1.3 CSI camera through Picamera2 for live image capture, runs four YOLO-based perception models, and outputs a unified `PerceptionOutput` for downstream control logic.
 
 The cart is limited to low-speed driving on sidewalks, with the core goal of realizing safe AI-assisted obstacle avoidance driving, while retaining full manual takeover authority to ensure the safety of elderly and child users throughout the use.
 
@@ -24,11 +24,11 @@ This project is a 8-week (2-month) development program for sophomore interns maj
 
 | Category                  | Details                                                               |
 | ------------------------- | --------------------------------------------------------------------- |
-| Core Hardware             | Raspberry Pi (with AI inference capability), compatible camera module |
-| Programming Language      | Python 3.14                                                           |
-| Computer Vision Library   | OpenCV 4.13.0.92                                                      |
-| AI Inference Frameworks   | PyTorch / TensorFlow Lite                                             |
-| Lightweight Vision Models | YOLOv8-tiny, MobileNet                                                |
+| Core Hardware             | Raspberry Pi 5, Raspberry Pi Camera Rev 1.3 CSI camera                |
+| Programming Language      | Python 3.11 on Raspberry Pi; Python 3.14 is used in local training    |
+| Computer Vision Library   | OpenCV, Picamera2                                                     |
+| AI Inference Frameworks   | PyTorch / Ultralytics YOLO; ONNX/TFLite can be added later            |
+| Lightweight Vision Models | YOLOv8n detection and segmentation models                             |
 | Communication             | Serial communication with underlying control board                    |
 
 ## Development Cycle & Phased Plan (8 Weeks)
@@ -70,6 +70,39 @@ The whole development is divided into 4 phases, with clear task nodes and delive
 
 ## Repository Structure
 
+```text
+control/          Decision logic and control application entry point
+deploy/           Deployment service entry point and runtime config
+io_camera/        Camera backend abstraction for Picamera2 and OpenCV
+perception/       Perception runtime, fusion, preprocessing, and model providers
+models/           Model manifests, training configs, and Git LFS weights
+tools/            Dataset, training, evaluation, smoke-test, and live-view tools
+tests/            Unit and integration tests for perception, control, and tools
+data/             Local datasets; ignored by Git except placeholders/docs
+cache/            Local evaluation, smoke-test, and temporary outputs
+```
+
+## Current Default Models
+
+The current integrated perception chain uses four default manifests:
+
+```text
+models/training/smartcart_objects_yolov8n_combined_v3_pt_v1.manifest.json
+models/training/smartcart_traffic_light_yolov8n_combined_v2_pt_v1.manifest.json
+models/training/smartcart_laneseg_yolov8n_seg_roboflow_pt_v1.manifest.json
+models/training/smartcart_hazard_yolov8n_roboflow_pt_v1.manifest.json
+```
+
+Hazard recognition keeps the original two-class scheme:
+
+```text
+pothole, curb
+```
+
+In this project, water-filled potholes or similar ground pits are handled by the
+`pothole` hazard class. A separate `water` model class is not used in the current
+stage.
+
 ## Model Change Acceptance Workflow
 
 After registering or switching any perception model, run the unified perception
@@ -101,10 +134,11 @@ The model change is acceptable when the command reports `status=ok` and every
 saved `PerceptionOutput` can be read back and validated.
 
 For Raspberry Pi or VNC visual validation, run the live camera viewer after the
-smoke test passes:
+smoke test passes. On the current Raspberry Pi 5 + Raspberry Pi Camera Rev 1.3
+CSI setup, use Picamera2:
 
-```powershell
-python tools\run_perception_live_view.py --camera-backend picamera2 --device cpu --fps 3
+```bash
+python tools/run_perception_live_view.py --camera-backend picamera2 --device cpu --fps 3
 ```
 
 It draws object boxes and labels on live camera frames. It also draws
@@ -113,3 +147,17 @@ traffic-light, laneseg, and hazard boxes when the active model output includes
 Use `--camera-backend opencv --camera 0` for a USB camera.
 Add `--save-dir cache/live_view_frames --save-every 1` to save annotated
 frames during an SSH or VNC check.
+
+## Deployment Documents
+
+Use these files for the current Raspberry Pi 5 handoff:
+
+```text
+deployment_guide.md          Step-by-step Raspberry Pi 5 deployment guide
+commands.md                  Common commands for setup, smoke tests, live view, and control checks
+perception_delivery_report.md Perception model inventory, metrics, limitations, and acceptance checklist
+schema.md                    PerceptionOutput and serial/control interface contract
+```
+
+`deployment_guide.md` is the main document for deploying on Raspberry Pi 5 with
+Raspberry Pi Camera Rev 1.3. `commands.md` is the shorter command cheat sheet.

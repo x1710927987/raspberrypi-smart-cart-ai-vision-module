@@ -1,11 +1,26 @@
 # Perception Module Delivery Report
 
-Date: 2026-05-11
+Date: 2026-05-28
 
 This report is the final delivery checklist for the perception module owned by
 role A. It summarizes the currently integrated models, manifests, weights,
 evaluation artifacts, smoke-test commands, known limitations, and remaining
 handoff work.
+
+## Target Deployment Hardware
+
+Current deployment target:
+
+- Raspberry Pi 5.
+- Raspberry Pi Camera Rev 1.3 connected through the CSI ribbon interface.
+- Picamera2 camera backend for CSI capture.
+- OpenCV BGR frames as the in-process image convention.
+- CPU inference for Raspberry Pi smoke tests; GPU can still be used on the
+  development workstation for training and evaluation.
+
+For this stage, the checked-in `.pt` model weights under `models/weights/` are
+the deployment artifacts. ONNX or TFLite export is treated as a later
+optimization task rather than a blocker for current-stage Raspberry Pi testing.
 
 ## Delivery Status
 
@@ -199,12 +214,36 @@ conda activate smartcart-ai
 python tools\run_perception_pipeline_smoke.py --device 0
 ```
 
+On Raspberry Pi 5, use CPU:
+
+```bash
+source .venv/bin/activate
+python tools/run_perception_pipeline_smoke.py --device cpu
+```
+
 CPU-only validation:
 
 ```powershell
 conda activate smartcart-ai
 python tools\run_perception_pipeline_smoke.py --device cpu
 ```
+
+Raspberry Pi 5 + Raspberry Pi Camera Rev 1.3 live-view validation:
+
+```bash
+source .venv/bin/activate
+python tools/run_perception_live_view.py \
+  --camera-backend picamera2 \
+  --device cpu \
+  --fps 3 \
+  --no-window \
+  --print-json-every 1 \
+  --save-dir cache/live_view_frames \
+  --save-every 1
+```
+
+For VNC visual validation, remove `--no-window` to display the annotated live
+camera image with detection boxes and labels.
 
 Output files:
 
@@ -274,6 +313,7 @@ and validated by the runtime schema checks.
 ### Pipeline Acceptance
 
 - `tools/run_perception_pipeline_smoke.py`
+- `tools/run_perception_live_view.py`
 
 ## Code Module Inventory
 
@@ -289,11 +329,13 @@ and validated by the runtime schema checks.
 
 ## Known Limitations
 
-1. Current default model artifacts are `.pt` files. They are good for local
-   validation, but Raspberry Pi deployment should export ONNX or TFLite and
-   register new manifests.
-2. The hazard model only covers `pothole` and `curb`. It does not yet cover
-   `step_up`, `step_down`, `speed_bump`, `water`, or `debris`.
+1. Current default model artifacts are `.pt` files. They are acceptable for
+   current Raspberry Pi 5 smoke testing. ONNX/TFLite export can be added later
+   if CPU inference speed is not enough.
+2. The hazard model only covers `pothole` and `curb`. Water-filled potholes or
+   similar ground pits are treated as `pothole`; there is no separate `water`
+   model class in the current default pipeline. The model does not yet cover
+   `step_up`, `step_down`, `speed_bump`, or `debris`.
 3. The objects model covers `pedestrian`, `bicycle`, `car`, `scooter`, and
    `roadblock`. It does not yet cover `animal`, `stroller`, `wheelchair`, or
    `bollard`.
@@ -304,8 +346,10 @@ and validated by the runtime schema checks.
 6. The unified pipeline is single-frame perception. It does not yet include
    temporal voting, multi-frame stability, ROI filtering, or control safety
    policies.
-7. Local GPU/CPU smoke tests pass, but FPS, memory, camera input, and cold-start
-   behavior still need target-device validation.
+7. Local GPU/CPU smoke tests pass, and the Picamera2 live camera path has been
+   manually validated on Raspberry Pi 5 + Raspberry Pi Camera Rev 1.3. Long-run
+   FPS, memory, thermal, and cold-start behavior still need target-device
+   validation.
 8. Some external datasets still have `license=unknown` in manifests. Dataset
    source and license records should be cleaned up before public release.
 
@@ -347,16 +391,31 @@ cache/evaluation/traffic_light_error_gallery_v2_remaining/
 cache/evaluation/hazard_error_gallery/
 ```
 
+5. Run the Raspberry Pi live camera viewer:
+
+```bash
+python tools/run_perception_live_view.py \
+  --camera-backend picamera2 \
+  --device cpu \
+  --fps 3 \
+  --save-dir cache/live_view_frames \
+  --save-every 30
+```
+
 ## Recommended Next Work
 
 Recommended priorities after this delivery:
 
-1. Test FPS, memory, cold-start time, and live camera input on the target device.
-2. Export ONNX/TFLite and verify the Raspberry Pi runtime format.
+1. Run a longer Raspberry Pi 5 VNC live-view test and record FPS, memory,
+   temperature, and cold-start time.
+2. Run `control/app.py` with `--camera-backend picamera2 --mock-serial` before
+   connecting the real vehicle serial interface.
 3. Confirm the `PerceptionOutput` to control-command interface with the control
    logic owner.
 4. Add ROI filtering, temporal confirmation, and braking thresholds for hazard.
-5. Decide whether to collect and train additional classes such as `wheelchair`,
+5. Export ONNX/TFLite and verify the Raspberry Pi runtime format if `.pt`
+   inference cannot meet the required FPS.
+6. Decide whether to collect and train additional classes such as `wheelchair`,
    `stroller`, `bollard`, `animal`, `step_up`, and `step_down` after real-road
    tests.
 
