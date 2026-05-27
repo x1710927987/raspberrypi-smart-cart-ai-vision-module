@@ -65,7 +65,7 @@ def run_live_view(
     target_size: tuple[int, int] = (640, 480),
     camera_width: int | None = 640,
     camera_height: int | None = 480,
-    camera_fps: float | None = 30.0,
+    camera_fps: float | None = None,
     pixel_format: str = "BGR888",
     fps_limit: float = 5.0,
     max_objects: int = 20,
@@ -246,6 +246,13 @@ def _optional_positive_int(value: str) -> int | None:
     return parsed
 
 
+def _optional_positive_float(value: str) -> float | None:
+    parsed = float(value)
+    if parsed <= 0:
+        return None
+    return parsed
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Show live camera frames annotated with SmartCart perception outputs.")
     parser.add_argument("--camera", type=int, default=0, help="Camera index for OpenCV backend. Default: 0.")
@@ -259,7 +266,7 @@ def main() -> int:
     parser.add_argument("--target-size", type=_parse_target_size, default=(640, 480), help="Preprocess size as WIDTHxHEIGHT. Default: 640x480.")
     parser.add_argument("--camera-width", type=_optional_positive_int, default=640, help="Requested camera width. Use 0 to leave unchanged.")
     parser.add_argument("--camera-height", type=_optional_positive_int, default=480, help="Requested camera height. Use 0 to leave unchanged.")
-    parser.add_argument("--camera-fps", type=float, default=30.0, help="Requested camera capture FPS. Default: 30.")
+    parser.add_argument("--camera-fps", type=_optional_positive_float, default=None, help="Requested camera capture FPS. Use 0 to let Picamera2 choose. Default: auto.")
     parser.add_argument("--pixel-format", default="BGR888", help="Picamera2 pixel format. Default: BGR888.")
     parser.add_argument("--fps", type=float, default=5.0, help="Maximum processing FPS. Use 0 for no cap. Default: 5.")
     parser.add_argument("--max-objects", type=int, default=20, help="Maximum objects kept after fusion. Default: 20.")

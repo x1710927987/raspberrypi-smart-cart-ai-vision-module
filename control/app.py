@@ -39,21 +39,25 @@ class SmartCartApplication:
         camera_backend: str = "auto",
         camera_width: int = 640,
         camera_height: int = 480,
-        camera_fps: float = 30.0,
+        camera_fps: float | None = None,
+        camera_warmup_seconds: float = 1.0,
         serial_port: str = "/dev/ttyUSB0",
         serial_baudrate: int = 115200,
         use_mock_serial: bool = False,
         target_fps: int = 10,
+        max_frames: int | None = None,
     ):
         self.camera_device = camera_device
         self.camera_backend = camera_backend
         self.camera_width = camera_width
         self.camera_height = camera_height
         self.camera_fps = camera_fps
+        self.camera_warmup_seconds = camera_warmup_seconds
         self.serial_port = serial_port
         self.serial_baudrate = serial_baudrate
         self.use_mock_serial = use_mock_serial
         self.target_fps = target_fps
+        self.max_frames = max_frames
         self.frame_time = 1.0 / target_fps if target_fps > 0 else 0.0
 
         self.camera_source: Optional[CameraSource] = None
@@ -89,6 +93,7 @@ class SmartCartApplication:
                 width=self.camera_width,
                 height=self.camera_height,
                 fps=self.camera_fps,
+                warmup_seconds=self.camera_warmup_seconds,
             )
             self.camera_source.start()
             logger.info("Camera ready.")
@@ -179,6 +184,9 @@ class SmartCartApplication:
                 if not self.process_frame():
                     logger.warning("Frame processing stopped the main loop.")
                     break
+                if self.max_frames is not None and self.frame_count >= self.max_frames:
+                    logger.info("Reached max frames: %s", self.max_frames)
+                    break
         except KeyboardInterrupt:
             logger.info("Stop signal received.")
         except Exception as exc:
@@ -220,11 +228,13 @@ def main() -> int:
     )
     parser.add_argument("--camera-width", type=int, default=640, help="Requested camera width. Default: 640.")
     parser.add_argument("--camera-height", type=int, default=480, help="Requested camera height. Default: 480.")
-    parser.add_argument("--camera-fps", type=float, default=30.0, help="Requested camera FPS. Default: 30.")
+    parser.add_argument("--camera-fps", type=_optional_positive_float, default=None, help="Requested camera capture FPS. Use 0 to let Picamera2 choose. Default: auto.")
+    parser.add_argument("--camera-warmup", type=float, default=1.0, help="Camera warmup seconds before first capture. Default: 1.0.")
     parser.add_argument("--port", type=str, default="/dev/ttyUSB0", help="Serial port. Default: /dev/ttyUSB0.")
     parser.add_argument("--baudrate", type=int, default=115200, help="Serial baudrate. Default: 115200.")
     parser.add_argument("--mock-serial", action="store_true", help="Use mock serial sender for local tests.")
     parser.add_argument("--fps", type=int, default=10, help="Target loop FPS. Default: 10.")
+    parser.add_argument("--max-frames", type=int, default=None, help="Stop after N processed frames, useful for Raspberry Pi smoke tests.")
     args = parser.parse_args()
 
     app = SmartCartApplication(
@@ -233,12 +243,21 @@ def main() -> int:
         camera_width=args.camera_width,
         camera_height=args.camera_height,
         camera_fps=args.camera_fps,
+        camera_warmup_seconds=args.camera_warmup,
         serial_port=args.port,
         serial_baudrate=args.baudrate,
         use_mock_serial=args.mock_serial,
         target_fps=args.fps,
+        max_frames=args.max_frames,
     )
     return app.run()
+
+
+def _optional_positive_float(value: str) -> float | None:
+    parsed = float(value)
+    if parsed <= 0:
+        return None
+    return parsed
 
 
 if __name__ == "__main__":

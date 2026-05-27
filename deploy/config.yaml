@@ -8,7 +8,8 @@ perception:
   camera_index: 0
   camera_width: 640
   camera_height: 480
-  camera_fps: 30
+  camera_fps:
+  camera_warmup_seconds: 1.0
   pixel_format: "BGR888"
   device: "cpu"
 

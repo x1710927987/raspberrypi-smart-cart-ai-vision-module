@@ -61,13 +61,16 @@ class SmartCartService:
             return
 
         self.perception = PerceptionPipeline.with_default_models(device=perception_cfg.get("device"))
+        camera_fps_raw = perception_cfg.get("camera_fps")
+        camera_fps = None if camera_fps_raw in (None, "") else float(camera_fps_raw)
         self.camera_source = create_camera_source(
             backend=str(perception_cfg.get("camera_backend", "auto")),
             index=int(perception_cfg.get("camera_index", 0)),
             width=int(perception_cfg.get("camera_width", 640)),
             height=int(perception_cfg.get("camera_height", 480)),
-            fps=float(perception_cfg.get("camera_fps", 30.0)),
+            fps=camera_fps,
             pixel_format=str(perception_cfg.get("pixel_format", "BGR888")),
+            warmup_seconds=float(perception_cfg.get("camera_warmup_seconds", 1.0)),
         )
         self.camera_source.start()
 

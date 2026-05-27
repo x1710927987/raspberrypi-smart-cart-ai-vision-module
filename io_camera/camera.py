@@ -27,9 +27,9 @@ class CameraConfig:
     index: int = 0
     width: int | None = 640
     height: int | None = 480
-    fps: float | None = 30.0
+    fps: float | None = None
     pixel_format: str = "BGR888"
-    warmup_seconds: float = 0.1
+    warmup_seconds: float = 1.0
 
 
 class OpenCVCameraSource:
@@ -78,8 +78,10 @@ class PiCamera2Source:
         main_config: dict[str, Any] = {"format": self.config.pixel_format}
         if self.config.width is not None and self.config.height is not None:
             main_config["size"] = (int(self.config.width), int(self.config.height))
-        controls = {"FrameRate": float(self.config.fps)} if self.config.fps is not None else None
-        video_config = camera.create_video_configuration(main=main_config, controls=controls)
+        config_kwargs: dict[str, Any] = {"main": main_config}
+        if self.config.fps is not None:
+            config_kwargs["controls"] = {"FrameRate": float(self.config.fps)}
+        video_config = camera.create_video_configuration(**config_kwargs)
         camera.configure(video_config)
         camera.start()
         if self.config.warmup_seconds > 0:
@@ -141,9 +143,9 @@ def create_camera_source(
     index: int = 0,
     width: int | None = 640,
     height: int | None = 480,
-    fps: float | None = 30.0,
+    fps: float | None = None,
     pixel_format: str = "BGR888",
-    warmup_seconds: float = 0.1,
+    warmup_seconds: float = 1.0,
 ) -> CameraSource:
     normalized_backend = backend.strip().lower()
     if normalized_backend not in CAMERA_BACKENDS:

@@ -94,7 +94,21 @@ def test_picamera2_source_reads_bgr_frame_and_closes():
     assert fake_camera_class.instance.stopped is True
     assert fake_camera_class.instance.closed is True
     assert fake_camera_class.instance.main_config == {"format": "BGR888", "size": (12, 8)}
-    assert fake_camera_class.instance.controls == {"FrameRate": 30.0}
+    assert fake_camera_class.instance.controls is None
+
+
+def test_picamera2_source_applies_explicit_frame_rate_control():
+    frame = np.ones((8, 12, 3), dtype=np.uint8)
+    fake_camera_class = _FakePicamera2Factory(frame)
+    source = PiCamera2Source(
+        CameraConfig(backend="picamera2", width=12, height=8, fps=15, warmup_seconds=0),
+        picamera2_class=fake_camera_class,
+    )
+
+    source.start()
+    source.release()
+
+    assert fake_camera_class.instance.controls == {"FrameRate": 15.0}
 
 
 def test_picamera2_source_converts_rgb888_to_bgr():
