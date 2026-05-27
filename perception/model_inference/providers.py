@@ -50,7 +50,7 @@ class ManifestTrafficLightClassifier:
         label, conf = _label_and_conf(item)
         if conf < self.manifest.confidence_threshold:
             return None
-        return TrafficLight(str(self.manifest.map_label(label)), round(conf, 4))
+        return TrafficLight(str(self.manifest.map_label(label)), round(conf, 4), _optional_bbox(item))
 
     def classify(self, frame: np.ndarray, preprocess_result: Optional[PreprocessResult] = None) -> Optional[TrafficLight]:
         return self.detect(frame, preprocess_result)
@@ -74,7 +74,7 @@ class ManifestHazardDetector:
         label, conf = _label_and_conf(item)
         if conf < self.manifest.confidence_threshold:
             return None
-        return Hazard(str(self.manifest.map_label(label)), round(conf, 4))
+        return Hazard(str(self.manifest.map_label(label)), round(conf, 4), _optional_bbox(item))
 
     def classify(self, frame: np.ndarray, preprocess_result: Optional[PreprocessResult] = None) -> Optional[Hazard]:
         return self.detect(frame, preprocess_result)
@@ -101,7 +101,7 @@ class ManifestLaneSegmenter:
         conf = float(raw.get("conf", raw.get("confidence", 0.0)))
         if conf < self.manifest.confidence_threshold:
             return None
-        return LaneSeg(int(raw.get("mask_id", 0)), round(conf, 4))
+        return LaneSeg(int(raw.get("mask_id", 0)), round(conf, 4), _optional_bbox(raw))
 
     def detect(self, frame: np.ndarray, preprocess_result: Optional[PreprocessResult] = None) -> Optional[LaneSeg]:
         return self.segment(frame, preprocess_result)
@@ -169,6 +169,18 @@ def _label_and_conf(item: Any) -> tuple[int | str, float]:
         raise ValueError("classification backend output is missing label/state/type/class_id")
     conf = item.get("conf", item.get("confidence", item.get("score", 0.0)))
     return label, float(conf)
+
+
+def _optional_bbox(item: Any) -> list[float] | None:
+    if not isinstance(item, Mapping):
+        return None
+    bbox = item.get("bbox")
+    if bbox is None:
+        return None
+    values = [float(value) for value in bbox]
+    if len(values) != 4:
+        raise ValueError("backend bbox must contain four coordinates")
+    return values
 
 
 def _ensure_task(manifest: ModelManifest, task: str) -> None:

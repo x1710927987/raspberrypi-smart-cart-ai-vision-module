@@ -36,3 +36,18 @@ def test_perception_output_round_trips_through_json():
 
     assert decoded == output
     validate_perception_output(decoded)
+
+
+def test_perception_output_round_trips_optional_visual_bboxes():
+    output = PerceptionOutput(
+        timestamp=123.456,
+        laneseg=LaneSeg(mask_id=1, conf=0.9, bbox=[1.0, 2.0, 30.0, 40.0]),
+        objects=[],
+        traffic_light=TrafficLight(state="green", conf=0.8, bbox=[10.0, 12.0, 20.0, 28.0]),
+        hazard=Hazard(type="curb", conf=0.7, bbox=[50.0, 60.0, 100.0, 110.0]),
+    )
+
+    decoded = PerceptionOutput.from_json(output.to_json())
+
+    assert decoded == output
+    validate_perception_output(decoded)

@@ -107,8 +107,9 @@ smoke test passes:
 python tools\run_perception_live_view.py --camera-backend picamera2 --device cpu --fps 3
 ```
 
-It draws object boxes and labels on live camera frames and shows the current
-traffic-light, laneseg, hazard, FPS, and inference latency status.
+It draws object boxes and labels on live camera frames. It also draws
+traffic-light, laneseg, and hazard boxes when the active model output includes
+`bbox`, and shows FPS and inference latency status.
 Use `--camera-backend opencv --camera 0` for a USB camera.
 Add `--save-dir cache/live_view_frames --save-every 1` to save annotated
 frames during an SSH or VNC check.

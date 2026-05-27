@@ -15,18 +15,21 @@ class ObjectBBox:
 class TrafficLight:
     state: str
     conf: float
+    bbox: Optional[List[float]] = None
 
 
 @dataclass
 class Hazard:
     type: str
     conf: float
+    bbox: Optional[List[float]] = None
 
 
 @dataclass
 class LaneSeg:
     mask_id: int
     conf: float
+    bbox: Optional[List[float]] = None
 
 
 @dataclass
@@ -40,10 +43,10 @@ class PerceptionOutput:
     def to_dict(self) -> Dict[str, Any]:
         d: Dict[str, Any] = {
             "timestamp": self.timestamp,
-            "laneseg": asdict(self.laneseg) if self.laneseg is not None else None,
+            "laneseg": _to_payload(self.laneseg) if self.laneseg is not None else None,
             "objects": [asdict(o) for o in self.objects],
-            "traffic_light": asdict(self.traffic_light) if self.traffic_light is not None else None,
-            "hazard": asdict(self.hazard) if self.hazard is not None else None,
+            "traffic_light": _to_payload(self.traffic_light) if self.traffic_light is not None else None,
+            "hazard": _to_payload(self.hazard) if self.hazard is not None else None,
         }
         return d
 
@@ -52,10 +55,10 @@ class PerceptionOutput:
 
     @staticmethod
     def from_dict(d: Dict[str, Any]) -> "PerceptionOutput":
-        laneseg = LaneSeg(**d["laneseg"]) if d.get("laneseg") else None
+        laneseg = _laneseg_from_dict(d["laneseg"]) if d.get("laneseg") else None
         objects = [ObjectBBox(**o) for o in d.get("objects", [])]
-        traffic_light = TrafficLight(**d["traffic_light"]) if d.get("traffic_light") else None
-        hazard = Hazard(**d["hazard"]) if d.get("hazard") else None
+        traffic_light = _traffic_light_from_dict(d["traffic_light"]) if d.get("traffic_light") else None
+        hazard = _hazard_from_dict(d["hazard"]) if d.get("hazard") else None
         return PerceptionOutput(
             timestamp=float(d.get("timestamp", time.time())),
             laneseg=laneseg,
@@ -105,4 +108,27 @@ class ControlCommand:
     @staticmethod
     def from_json(s: str) -> "ControlCommand":
         return ControlCommand.from_dict(json.loads(s))
+
+
+def _optional_bbox(value: Dict[str, Any]) -> Optional[List[float]]:
+    raw = value.get("bbox")
+    if raw is None:
+        return None
+    return [float(item) for item in raw]
+
+
+def _to_payload(value: Any) -> Dict[str, Any]:
+    return {key: item for key, item in asdict(value).items() if item is not None}
+
+
+def _laneseg_from_dict(value: Dict[str, Any]) -> LaneSeg:
+    return LaneSeg(mask_id=int(value["mask_id"]), conf=float(value["conf"]), bbox=_optional_bbox(value))
+
+
+def _traffic_light_from_dict(value: Dict[str, Any]) -> TrafficLight:
+    return TrafficLight(state=str(value["state"]), conf=float(value["conf"]), bbox=_optional_bbox(value))
+
+
+def _hazard_from_dict(value: Dict[str, Any]) -> Hazard:
+    return Hazard(type=str(value["type"]), conf=float(value["conf"]), bbox=_optional_bbox(value))
 

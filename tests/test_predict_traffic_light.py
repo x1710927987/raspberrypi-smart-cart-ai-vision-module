@@ -31,7 +31,7 @@ def test_predict_traffic_light_with_injected_backend():
         script.DEFAULT_MANIFEST,
         backend=FixedPredictionBackend([{"label": "green", "conf": 0.77, "bbox": [1, 2, 3, 4]}]),
     )
-    assert prediction == TrafficLight("green", 0.77)
+    assert prediction == TrafficLight("green", 0.77, [1.0, 2.0, 3.0, 4.0])
 
 
 def test_default_manifest_uses_combined_v2_model():

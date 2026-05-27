@@ -98,6 +98,7 @@ def _ultralytics_results_to_laneseg(results: Any, manifest: ModelManifest) -> di
     mask_id = int(manifest.postprocessing.get("mask_id", 1))
     best_conf = -1.0
     best_class_id: int | None = None
+    best_bbox: list[float] | None = None
     for result in _as_result_list(results):
         if getattr(result, "masks", None) is None:
             continue
@@ -113,6 +114,7 @@ def _ultralytics_results_to_laneseg(results: Any, manifest: ModelManifest) -> di
             if conf > best_conf:
                 best_conf = conf
                 best_class_id = class_id
+                best_bbox = _sequence_values(_item_row(getattr(boxes, "xyxy"), index))
     if best_class_id is None:
         return None
     return {
@@ -120,6 +122,7 @@ def _ultralytics_results_to_laneseg(results: Any, manifest: ModelManifest) -> di
         "class_id": best_class_id,
         "label": manifest.class_name(best_class_id),
         "confidence": best_conf,
+        "bbox": best_bbox,
     }
 
 

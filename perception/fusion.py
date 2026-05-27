@@ -105,9 +105,9 @@ def _coerce_laneseg(value: Any) -> Optional[LaneSeg]:
     if value is None:
         return None
     if isinstance(value, LaneSeg):
-        return LaneSeg(int(value.mask_id), float(value.conf))
+        return LaneSeg(int(value.mask_id), float(value.conf), _optional_bbox(value.bbox))
     if isinstance(value, Mapping):
-        return LaneSeg(int(_required(value, "mask_id")), float(_required(value, "conf")))
+        return LaneSeg(int(_required(value, "mask_id")), float(_required(value, "conf")), _optional_bbox(value.get("bbox")))
     raise TypeError("laneseg must be LaneSeg, mapping, None, or omitted")
 
 
@@ -123,9 +123,9 @@ def _coerce_traffic_light(value: Any) -> Optional[TrafficLight]:
     if value is None:
         return None
     if isinstance(value, TrafficLight):
-        return TrafficLight(str(value.state), float(value.conf))
+        return TrafficLight(str(value.state), float(value.conf), _optional_bbox(value.bbox))
     if isinstance(value, Mapping):
-        return TrafficLight(str(_required(value, "state")), float(_required(value, "conf")))
+        return TrafficLight(str(_required(value, "state")), float(_required(value, "conf")), _optional_bbox(value.get("bbox")))
     raise TypeError("traffic_light must be TrafficLight, mapping, None, or omitted")
 
 
@@ -133,9 +133,9 @@ def _coerce_hazard(value: Any) -> Optional[Hazard]:
     if value is None:
         return None
     if isinstance(value, Hazard):
-        return Hazard(str(value.type), float(value.conf))
+        return Hazard(str(value.type), float(value.conf), _optional_bbox(value.bbox))
     if isinstance(value, Mapping):
-        return Hazard(str(_required(value, "type")), float(_required(value, "conf")))
+        return Hazard(str(_required(value, "type")), float(_required(value, "conf")), _optional_bbox(value.get("bbox")))
     raise TypeError("hazard must be Hazard, mapping, None, or omitted")
 
 
@@ -151,6 +151,17 @@ def _required(mapping: Mapping[str, Any], key: str) -> Any:
     if key not in mapping:
         raise ValueError(f"missing required field: {key}")
     return mapping[key]
+
+
+def _optional_bbox(value: Any) -> Optional[List[float]]:
+    if value is None:
+        return None
+    if isinstance(value, (str, bytes)):
+        raise TypeError("bbox must be an iterable of four numeric values")
+    bbox = [float(item) for item in value]
+    if len(bbox) != 4:
+        raise ValueError("bbox must contain exactly 4 values")
+    return bbox
 
 
 def _validate_config(config: FusionConfig) -> None:

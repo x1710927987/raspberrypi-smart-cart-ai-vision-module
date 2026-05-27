@@ -33,6 +33,9 @@ def test_draw_perception_overlay_draws_objects_and_status_panel():
     assert annotated.shape == frame.shape
     assert int(annotated.sum()) > int(frame.sum())
     assert not np.array_equal(annotated[20, 20], frame[20, 20])
+    assert not np.array_equal(annotated[10, 120], frame[10, 120])
+    assert not np.array_equal(annotated[75, 95], frame[75, 95])
+    assert not np.array_equal(annotated[70, 3], frame[70, 3])
 
 
 def test_run_live_view_without_window_processes_limited_frames():
@@ -93,10 +96,10 @@ def test_clamp_bbox_rejects_invalid_bbox_length():
 def _sample_output() -> PerceptionOutput:
     return PerceptionOutput(
         timestamp=time.time(),
-        laneseg=LaneSeg(mask_id=1, conf=0.88),
+        laneseg=LaneSeg(mask_id=1, conf=0.88, bbox=[3.0, 70.0, 90.0, 118.0]),
         objects=[ObjectBBox(cls="pedestrian", bbox=[12.0, 18.0, 80.0, 100.0], conf=0.91)],
-        traffic_light=TrafficLight(state="green", conf=0.93),
-        hazard=Hazard(type="curb", conf=0.72),
+        traffic_light=TrafficLight(state="green", conf=0.93, bbox=[120.0, 10.0, 145.0, 44.0]),
+        hazard=Hazard(type="curb", conf=0.72, bbox=[95.0, 75.0, 140.0, 115.0]),
     )
 
 

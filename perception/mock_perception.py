@@ -108,6 +108,8 @@ def validate_perception_output(output: PerceptionOutput) -> None:
         _validate_conf(output.laneseg.conf, "laneseg.conf")
         if output.laneseg.mask_id < 0:
             raise ValueError("laneseg.mask_id must be non-negative")
+        if output.laneseg.bbox is not None:
+            _validate_bbox(output.laneseg.bbox, "laneseg.bbox")
     for index, obj in enumerate(output.objects):
         if obj.cls not in OBJECT_CLASSES:
             raise ValueError(f"objects[{index}].cls is not supported: {obj.cls!r}")
@@ -117,10 +119,14 @@ def validate_perception_output(output: PerceptionOutput) -> None:
         if output.traffic_light.state not in TRAFFIC_LIGHT_STATES:
             raise ValueError(f"unsupported traffic light state: {output.traffic_light.state!r}")
         _validate_conf(output.traffic_light.conf, "traffic_light.conf")
+        if output.traffic_light.bbox is not None:
+            _validate_bbox(output.traffic_light.bbox, "traffic_light.bbox")
     if output.hazard is not None:
         if output.hazard.type not in HAZARD_TYPES:
             raise ValueError(f"unsupported hazard type: {output.hazard.type!r}")
         _validate_conf(output.hazard.conf, "hazard.conf")
+        if output.hazard.bbox is not None:
+            _validate_bbox(output.hazard.bbox, "hazard.bbox")
 
 
 def _scaled_bbox(bbox: Iterable[float], image_width: int, image_height: int) -> List[float]:

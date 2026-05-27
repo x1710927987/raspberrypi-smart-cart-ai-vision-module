@@ -19,23 +19,23 @@ Shape (all keys present; nullable where noted):
 ```json
 {
   "timestamp": 1719999999.123,
-  "laneseg": {"mask_id": 3, "conf": 0.92},             // nullable
+  "laneseg": {"mask_id": 3, "conf": 0.92, "bbox": [x1, y1, x2, y2]}, // nullable; bbox optional
   "objects": [
     {"cls": "pedestrian", "bbox": [x1, y1, x2, y2], "conf": 0.86}
   ],
-  "traffic_light": {"state": "red", "conf": 0.88},  // nullable
-  "hazard": {"type": "pothole", "conf": 0.81}       // nullable
+  "traffic_light": {"state": "red", "conf": 0.88, "bbox": [x1, y1, x2, y2]}, // nullable; bbox optional
+  "hazard": {"type": "pothole", "conf": 0.81, "bbox": [x1, y1, x2, y2]}      // nullable; bbox optional
 }
 ```
 
 Field definitions:
-- `laneseg.mask_id` (int): Identifier of the drivable-area mask (implementation-defined indexing). `conf` confidence.
+- `laneseg.mask_id` (int): Identifier of the drivable-area mask (implementation-defined indexing). `conf` confidence. Optional `bbox` may be emitted for live-view visualization of the selected segmentation region.
 - `objects[]`:
   - `cls` (str): Object class. Baseline classes: `pedestrian`, `obstacle`, `roadblock`, `bicycle`, `car`, `animal`, `stroller`, `wheelchair`, `bollard`, `scooter`, `unknown`.
   - `bbox` (float[4]): `[x1, y1, x2, y2]` in pixels. Require `x2 > x1`, `y2 > y1`.
   - `conf` (float): detection confidence.
-- `traffic_light.state` (enum): `red` | `yellow` | `green` | `off` | `flashing` | `unknown`. `conf` confidence.
-- `hazard.type` (enum): baseline `pothole` | `curb` | `step_up` | `step_down` | `speed_bump` | `water` | `debris` | `unknown`. `conf` confidence.
+- `traffic_light.state` (enum): `red` | `yellow` | `green` | `off` | `flashing` | `unknown`. `conf` confidence. Optional `bbox` may be emitted when the traffic-light model is a detector.
+- `hazard.type` (enum): baseline `pothole` | `curb` | `step_up` | `step_down` | `speed_bump` | `water` | `debris` | `unknown`. `conf` confidence. Optional `bbox` may be emitted when the hazard model is a detector.
 
 Constraints and notes:
 - All confidences in [0, 1]. Empty arrays allowed. Nullable blocks may be `null` when not available.

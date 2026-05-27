@@ -200,8 +200,9 @@ checks.
 python tools\run_perception_live_view.py --camera-backend picamera2 --device cpu --fps 3
 ```
 
-The live view draws `objects` bounding boxes and labels, and displays
-traffic-light, laneseg, hazard, FPS, and inference latency status.
+The live view draws `objects` bounding boxes and labels. It also draws
+traffic-light, laneseg, and hazard boxes when the active model output includes
+`bbox`, and displays FPS and inference latency status.
 Use `--camera-backend opencv --camera 0` for a USB camera.
 Add `--save-dir cache/live_view_frames --save-every 1` to save annotated
 frames during an SSH or VNC check.

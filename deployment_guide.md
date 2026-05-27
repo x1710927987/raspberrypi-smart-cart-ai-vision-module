@@ -337,7 +337,7 @@ python tools/run_perception_live_view.py --camera-backend picamera2 --device cpu
 ```text
 摄像头实时画面
 objects 检测框、类别标签、置信度
-traffic_light / laneseg / hazard 当前状态文本
+traffic_light / laneseg / hazard 当前状态文本；如果模型输出 bbox，也会显示对应框和标签
 推理耗时和 FPS
 ```
 

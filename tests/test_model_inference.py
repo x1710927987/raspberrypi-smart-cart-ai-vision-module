@@ -88,7 +88,7 @@ def test_ultralytics_backend_plugs_into_traffic_light_provider():
     manifest = _manifest(task="traffic_light", classes=["green", "red", "yellow"], mapping={"green": "green", "red": "red", "yellow": "yellow"})
     backend = UltralyticsBackend(yolo_class=_fake_yolo_class(class_ids=[0, 1], confidences=[0.51, 0.86], boxes=[[1, 2, 3, 4], [5, 6, 7, 8]]))
     provider = ManifestTrafficLightClassifier(manifest, backend)
-    assert provider.detect(np.zeros((96, 96, 3), dtype=np.uint8)) == TrafficLight("red", 0.86)
+    assert provider.detect(np.zeros((96, 96, 3), dtype=np.uint8)) == TrafficLight("red", 0.86, [5.0, 6.0, 7.0, 8.0])
 
 
 def test_ultralytics_backend_converts_segmentation_result_to_laneseg():
@@ -99,7 +99,7 @@ def test_ultralytics_backend_converts_segmentation_result_to_laneseg():
     )
     backend = UltralyticsBackend(yolo_class=_fake_yolo_class(class_ids=[0], confidences=[0.74], boxes=[[1, 2, 30, 40]], has_masks=True))
     provider = ManifestLaneSegmenter(manifest, backend)
-    assert provider.segment(np.zeros((96, 96, 3), dtype=np.uint8)) == LaneSeg(7, 0.74)
+    assert provider.segment(np.zeros((96, 96, 3), dtype=np.uint8)) == LaneSeg(7, 0.74, [1.0, 2.0, 30.0, 40.0])
 
 
 def test_manifest_validation_rejects_bad_task_and_bad_schema_label():

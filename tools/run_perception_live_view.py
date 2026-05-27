@@ -30,6 +30,20 @@ CLASS_COLORS: dict[str, tuple[int, int, int]] = {
     "obstacle": (64, 64, 255),
     "unknown": (180, 180, 180),
 }
+TRAFFIC_COLORS: dict[str, tuple[int, int, int]] = {
+    "red": (40, 40, 230),
+    "yellow": (0, 220, 255),
+    "green": (40, 210, 40),
+    "unknown": (180, 180, 180),
+}
+HAZARD_COLORS: dict[str, tuple[int, int, int]] = {
+    "pothole": (42, 42, 220),
+    "curb": (255, 120, 40),
+    "water": (220, 130, 40),
+    "debris": (80, 80, 220),
+    "unknown": (180, 180, 180),
+}
+LANESEG_COLOR = (95, 210, 95)
 TEXT_COLOR = (245, 245, 245)
 PANEL_BG = (32, 32, 32)
 DEFAULT_WINDOW_NAME = "SmartCart Perception Live View"
@@ -44,6 +58,38 @@ def draw_perception_overlay(
 ) -> np.ndarray:
     annotated = frame.copy()
     height, width = annotated.shape[:2]
+
+    if output.laneseg is not None and output.laneseg.bbox is not None:
+        _draw_optional_bbox(
+            annotated,
+            output.laneseg.bbox,
+            width,
+            height,
+            color=LANESEG_COLOR,
+            label=f"sidewalk {output.laneseg.conf:.2f}",
+        )
+
+    if output.hazard is not None and output.hazard.bbox is not None:
+        color = HAZARD_COLORS.get(output.hazard.type, HAZARD_COLORS["unknown"])
+        _draw_optional_bbox(
+            annotated,
+            output.hazard.bbox,
+            width,
+            height,
+            color=color,
+            label=f"{output.hazard.type} {output.hazard.conf:.2f}",
+        )
+
+    if output.traffic_light is not None and output.traffic_light.bbox is not None:
+        color = TRAFFIC_COLORS.get(output.traffic_light.state, TRAFFIC_COLORS["unknown"])
+        _draw_optional_bbox(
+            annotated,
+            output.traffic_light.bbox,
+            width,
+            height,
+            color=color,
+            label=f"traffic_light:{output.traffic_light.state} {output.traffic_light.conf:.2f}",
+        )
 
     for obj in output.objects:
         x1, y1, x2, y2 = _clamp_bbox(obj.bbox, width, height)
@@ -230,6 +276,20 @@ def _clamp_bbox(bbox: list[float], width: int, height: int) -> tuple[int, int, i
     if y2 <= y1:
         y2 = min(height - 1, y1 + 1)
     return x1, y1, x2, y2
+
+
+def _draw_optional_bbox(
+    frame: np.ndarray,
+    bbox: list[float],
+    width: int,
+    height: int,
+    *,
+    color: tuple[int, int, int],
+    label: str,
+) -> None:
+    x1, y1, x2, y2 = _clamp_bbox(bbox, width, height)
+    cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
+    _draw_label(frame, label, x1, y1, color)
 
 
 def _parse_target_size(value: str) -> tuple[int, int]:
