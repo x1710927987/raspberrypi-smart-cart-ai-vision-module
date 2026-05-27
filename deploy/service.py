@@ -69,7 +69,7 @@ class SmartCartService:
             width=int(perception_cfg.get("camera_width", 640)),
             height=int(perception_cfg.get("camera_height", 480)),
             fps=camera_fps,
-            pixel_format=str(perception_cfg.get("pixel_format", "BGR888")),
+            pixel_format=str(perception_cfg.get("pixel_format", "RGB888")),
             warmup_seconds=float(perception_cfg.get("camera_warmup_seconds", 1.0)),
             read_timeout_seconds=float(perception_cfg.get("camera_read_timeout_seconds", 2.0)),
             stop_timeout_seconds=float(perception_cfg.get("camera_stop_timeout_seconds", 2.0)),

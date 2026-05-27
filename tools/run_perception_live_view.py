@@ -66,7 +66,7 @@ def run_live_view(
     camera_width: int | None = 640,
     camera_height: int | None = 480,
     camera_fps: float | None = None,
-    pixel_format: str = "BGR888",
+    pixel_format: str = "RGB888",
     camera_read_timeout: float = 2.0,
     camera_stop_timeout: float = 2.0,
     fps_limit: float = 5.0,
@@ -271,7 +271,11 @@ def main() -> int:
     parser.add_argument("--camera-width", type=_optional_positive_int, default=640, help="Requested camera width. Use 0 to leave unchanged.")
     parser.add_argument("--camera-height", type=_optional_positive_int, default=480, help="Requested camera height. Use 0 to leave unchanged.")
     parser.add_argument("--camera-fps", type=_optional_positive_float, default=None, help="Requested camera capture FPS. Use 0 to let Picamera2 choose. Default: auto.")
-    parser.add_argument("--pixel-format", default="BGR888", help="Picamera2 pixel format. Default: BGR888.")
+    parser.add_argument(
+        "--pixel-format",
+        default="RGB888",
+        help="Picamera2 pixel format before conversion to OpenCV BGR. Default: RGB888.",
+    )
     parser.add_argument("--camera-read-timeout", type=float, default=2.0, help="Camera read timeout seconds. Default: 2.0.")
     parser.add_argument("--camera-stop-timeout", type=float, default=2.0, help="Camera stop/close timeout seconds. Default: 2.0.")
     parser.add_argument("--fps", type=float, default=5.0, help="Maximum processing FPS. Use 0 for no cap. Default: 5.")

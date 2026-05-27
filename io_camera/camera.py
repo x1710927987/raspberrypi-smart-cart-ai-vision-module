@@ -30,7 +30,7 @@ class CameraConfig:
     width: int | None = 640
     height: int | None = 480
     fps: float | None = None
-    pixel_format: str = "BGR888"
+    pixel_format: str = "RGB888"
     warmup_seconds: float = 1.0
     read_timeout_seconds: float = 2.0
     stop_timeout_seconds: float = 2.0
@@ -162,7 +162,7 @@ def create_camera_source(
     width: int | None = 640,
     height: int | None = 480,
     fps: float | None = None,
-    pixel_format: str = "BGR888",
+    pixel_format: str = "RGB888",
     warmup_seconds: float = 1.0,
     read_timeout_seconds: float = 2.0,
     stop_timeout_seconds: float = 2.0,
@@ -194,7 +194,7 @@ def _build_camera_source(config: CameraConfig, *, backend: str) -> CameraSource:
     raise ValueError(f"unsupported camera backend: {backend!r}")
 
 
-def _ensure_bgr_frame(frame: np.ndarray, *, pixel_format: str = "BGR888") -> np.ndarray:
+def _ensure_bgr_frame(frame: np.ndarray, *, pixel_format: str = "RGB888") -> np.ndarray:
     if frame.ndim != 3:
         raise RuntimeError(f"camera frame must be HxWxC, got shape {frame.shape}")
     normalized_format = pixel_format.strip().upper()

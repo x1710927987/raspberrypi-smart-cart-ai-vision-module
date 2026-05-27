@@ -80,8 +80,9 @@ def test_opencv_camera_source_reads_frame_and_releases():
     ]
 
 
-def test_picamera2_source_reads_bgr_frame_and_closes():
-    frame = np.ones((8, 12, 4), dtype=np.uint8)
+def test_picamera2_source_reads_rgb888_as_bgr_and_closes():
+    frame = np.zeros((8, 12, 3), dtype=np.uint8)
+    frame[0, 0] = [10, 20, 30]
     fake_camera_class = _FakePicamera2Factory(frame)
     source = PiCamera2Source(CameraConfig(backend="picamera2", width=12, height=8, warmup_seconds=0), picamera2_class=fake_camera_class)
 
@@ -90,10 +91,11 @@ def test_picamera2_source_reads_bgr_frame_and_closes():
     source.release()
 
     assert read_frame.shape == (8, 12, 3)
+    assert read_frame[0, 0].tolist() == [30, 20, 10]
     assert fake_camera_class.instance.started is True
     assert fake_camera_class.instance.stopped is True
     assert fake_camera_class.instance.closed is True
-    assert fake_camera_class.instance.main_config == {"format": "BGR888", "size": (12, 8)}
+    assert fake_camera_class.instance.main_config == {"format": "RGB888", "size": (12, 8)}
     assert fake_camera_class.instance.controls is None
 
 
@@ -134,6 +136,21 @@ def test_picamera2_source_converts_rgb888_to_bgr():
     fake_camera_class = _FakePicamera2Factory(frame)
     source = PiCamera2Source(
         CameraConfig(backend="picamera2", width=1, height=1, pixel_format="RGB888", warmup_seconds=0),
+        picamera2_class=fake_camera_class,
+    )
+
+    source.start()
+    read_frame = source.read()
+    source.release()
+
+    assert read_frame.tolist() == [[[30, 20, 10]]]
+
+
+def test_picamera2_source_keeps_bgr888_as_bgr():
+    frame = np.array([[[30, 20, 10]]], dtype=np.uint8)
+    fake_camera_class = _FakePicamera2Factory(frame)
+    source = PiCamera2Source(
+        CameraConfig(backend="picamera2", width=1, height=1, pixel_format="BGR888", warmup_seconds=0),
         picamera2_class=fake_camera_class,
     )
 

@@ -12,7 +12,7 @@ perception:
   camera_warmup_seconds: 1.0
   camera_read_timeout_seconds: 2.0
   camera_stop_timeout_seconds: 2.0
-  pixel_format: "BGR888"
+  pixel_format: "RGB888"
   device: "cpu"
 
 control:

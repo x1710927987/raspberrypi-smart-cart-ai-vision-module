@@ -40,6 +40,7 @@ class SmartCartApplication:
         camera_width: int = 640,
         camera_height: int = 480,
         camera_fps: float | None = None,
+        pixel_format: str = "RGB888",
         camera_warmup_seconds: float = 1.0,
         camera_read_timeout_seconds: float = 2.0,
         camera_stop_timeout_seconds: float = 2.0,
@@ -54,6 +55,7 @@ class SmartCartApplication:
         self.camera_width = camera_width
         self.camera_height = camera_height
         self.camera_fps = camera_fps
+        self.pixel_format = pixel_format
         self.camera_warmup_seconds = camera_warmup_seconds
         self.camera_read_timeout_seconds = camera_read_timeout_seconds
         self.camera_stop_timeout_seconds = camera_stop_timeout_seconds
@@ -97,6 +99,7 @@ class SmartCartApplication:
                 width=self.camera_width,
                 height=self.camera_height,
                 fps=self.camera_fps,
+                pixel_format=self.pixel_format,
                 warmup_seconds=self.camera_warmup_seconds,
                 read_timeout_seconds=self.camera_read_timeout_seconds,
                 stop_timeout_seconds=self.camera_stop_timeout_seconds,
@@ -235,6 +238,7 @@ def main() -> int:
     parser.add_argument("--camera-width", type=int, default=640, help="Requested camera width. Default: 640.")
     parser.add_argument("--camera-height", type=int, default=480, help="Requested camera height. Default: 480.")
     parser.add_argument("--camera-fps", type=_optional_positive_float, default=None, help="Requested camera capture FPS. Use 0 to let Picamera2 choose. Default: auto.")
+    parser.add_argument("--pixel-format", default="RGB888", help="Picamera2 pixel format before conversion to OpenCV BGR. Default: RGB888.")
     parser.add_argument("--camera-warmup", type=float, default=1.0, help="Camera warmup seconds before first capture. Default: 1.0.")
     parser.add_argument("--camera-read-timeout", type=float, default=2.0, help="Camera read timeout seconds. Default: 2.0.")
     parser.add_argument("--camera-stop-timeout", type=float, default=2.0, help="Camera stop/close timeout seconds. Default: 2.0.")
@@ -251,6 +255,7 @@ def main() -> int:
         camera_width=args.camera_width,
         camera_height=args.camera_height,
         camera_fps=args.camera_fps,
+        pixel_format=args.pixel_format,
         camera_warmup_seconds=args.camera_warmup,
         camera_read_timeout_seconds=args.camera_read_timeout,
         camera_stop_timeout_seconds=args.camera_stop_timeout,

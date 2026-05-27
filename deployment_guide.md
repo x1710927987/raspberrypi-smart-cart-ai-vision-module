@@ -297,7 +297,7 @@ v4l2-ctl --list-devices
 CSI 摄像头默认用 Picamera2 测试：
 
 ```bash
-python -c "from picamera2 import Picamera2; cam=Picamera2(); cam.configure(cam.create_video_configuration(main={'format':'BGR888','size':(640,480)})); cam.start(); frame=cam.capture_array(); print(frame.shape); cam.stop(); cam.close()"
+python -c "from picamera2 import Picamera2; cam=Picamera2(); cam.configure(cam.create_video_configuration(main={'format':'RGB888','size':(640,480)})); cam.start(); frame=cam.capture_array(); print(frame.shape); cam.stop(); cam.close()"
 ```
 
 期望输出：
@@ -443,7 +443,7 @@ perception:
   camera_height: 480
   camera_fps:
   camera_warmup_seconds: 1.0
-  pixel_format: "BGR888"
+  pixel_format: "RGB888"
   device: "cpu"
 
 serial:
@@ -515,7 +515,7 @@ perception:
   camera_height: 480
   camera_fps:
   camera_warmup_seconds: 1.0
-  pixel_format: "BGR888"
+  pixel_format: "RGB888"
   device: "cpu"
 
 serial:
@@ -723,7 +723,7 @@ timed out reading frame from Picamera2
 ```bash
 sudo fuser -v /dev/video* /dev/media*
 rpicam-hello --timeout 5000
-python -c "from picamera2 import Picamera2; cam=Picamera2(); cam.configure(cam.create_video_configuration(main={'format':'BGR888','size':(640,480)})); cam.start(); print(cam.capture_array().shape); cam.stop(); cam.close()"
+python -c "from picamera2 import Picamera2; cam=Picamera2(); cam.configure(cam.create_video_configuration(main={'format':'RGB888','size':(640,480)})); cam.start(); print(cam.capture_array().shape); cam.stop(); cam.close()"
 ```
 
 处理建议：
@@ -734,7 +734,34 @@ python -c "from picamera2 import Picamera2; cam=Picamera2(); cam.configure(cam.c
 4. 如果只在本项目中超时，可临时增大 --camera-read-timeout 或降低分辨率，例如 --camera-width 320 --camera-height 240。
 ```
 
-### 13.7 串口权限不足
+### 13.7 Picamera2 画面颜色异常
+
+现象：
+```text
+rpicam-hello 预览颜色正常，但 run_perception_live_view.py 保存或显示的画面红蓝通道反了，例如人脸偏蓝。
+```
+
+处理建议：
+```bash
+python tools/run_perception_live_view.py \
+  --camera-backend picamera2 \
+  --pixel-format RGB888 \
+  --device cpu \
+  --fps 3 \
+  --max-frames 10 \
+  --no-window \
+  --save-dir cache/live_view_frames \
+  --save-every 1
+```
+
+说明：
+```text
+项目内部的 OpenCV、YOLO 和可视化统一使用 BGR 图像。
+Picamera2 默认请求 RGB888，再由 io_camera.camera.PiCamera2Source 转换为 BGR。
+如果手动改成 BGR888 后出现蓝脸、红蓝互换，请改回 RGB888。
+```
+
+### 13.8 串口权限不足
 
 现象：
 
@@ -757,7 +784,7 @@ groups
 
 确认包含 `dialout`。
 
-### 13.8 找不到 `/dev/ttyUSB0`
+### 13.9 找不到 `/dev/ttyUSB0`
 
 检查：
 
@@ -783,7 +810,7 @@ serial:
   baud: 115200
 ```
 
-### 13.9 推理很慢，FPS 不够
+### 13.10 推理很慢，FPS 不够
 
 `.pt` 模型在 Raspberry Pi CPU 上可能较慢。先记录实际耗时：
 
@@ -816,7 +843,7 @@ yolo export model=models/weights/smartcart_objects_yolov8n_combined_v3_pt_v1.pt 
 
 注意：导出后的模型还不能自动被当前 manifest 使用，需要后续补充 backend 或登记新的 manifest。当前阶段先用 `.pt` 跑通部署链路。
 
-### 13.10 运行中温度过高
+### 13.11 运行中温度过高
 
 查看温度：
 
@@ -833,7 +860,7 @@ vcgencmd measure_temp
 避免长时间满载无散热测试
 ```
 
-### 13.11 `deploy/run.py` 无法导入项目模块
+### 13.12 `deploy/run.py` 无法导入项目模块
 
 确保在项目根目录运行：
 
