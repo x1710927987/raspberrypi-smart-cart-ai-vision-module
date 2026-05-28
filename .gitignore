@@ -1,5 +1,6 @@
-# please add new terms from here
-personal_file/
+# Please add new terms from here
+personal_file/*
+!personal_file/README.md
 .vscode/
 cache/
 data/external/

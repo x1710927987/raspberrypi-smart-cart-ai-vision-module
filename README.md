@@ -80,6 +80,8 @@ tools/            Dataset, training, evaluation, smoke-test, and live-view tools
 tests/            Unit and integration tests for perception, control, and tools
 data/             Local datasets; ignored by Git except placeholders/docs
 cache/            Local evaluation, smoke-test, and temporary outputs
+docs/             Deployment guides, command notes, and requirement documents
+demos/            Demo/acceptance reports and handoff summaries
 ```
 
 ## Current Default Models
@@ -153,11 +155,14 @@ frames during an SSH or VNC check.
 Use these files for the current Raspberry Pi 5 handoff:
 
 ```text
-deployment_guide.md          Step-by-step Raspberry Pi 5 deployment guide
-commands.md                  Common commands for setup, smoke tests, live view, and control checks
-perception_delivery_report.md Perception model inventory, metrics, limitations, and acceptance checklist
-schema.md                    PerceptionOutput and serial/control interface contract
+docs/deployment_guide.md           Step-by-step Raspberry Pi 5 deployment guide
+docs/commands.md                   Common commands for setup, smoke tests, live view, and control checks
+docs/development_requirements.docx Original requirement/development planning document
+demos/perception_delivery_report.md Perception model inventory, metrics, limitations, and acceptance checklist
+schema.md                         PerceptionOutput and serial/control interface contract
 ```
 
-`deployment_guide.md` is the main document for deploying on Raspberry Pi 5 with
-Raspberry Pi Camera Rev 1.3. `commands.md` is the shorter command cheat sheet.
+`docs/deployment_guide.md` is the main document for deploying on Raspberry Pi 5
+with Raspberry Pi Camera Rev 1.3. `docs/commands.md` is the shorter command
+cheat sheet. `demos/perception_delivery_report.md` records the current model
+inventory, evaluation metrics, known limitations, and stage-acceptance evidence.

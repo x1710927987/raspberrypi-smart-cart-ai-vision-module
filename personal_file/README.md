@@ -1,0 +1,1 @@
+The `personal_file` directory is intended for files you need during development but do not wish to commit. This folder is already excluded via `.gitignore`, so feel free to store your private project files here.
