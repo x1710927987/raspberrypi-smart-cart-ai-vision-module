@@ -1,0 +1,213 @@
+{
+  "status": "ok",
+  "input_dir": "demos\\sample_image_processing\\original_images",
+  "output_dir": "demos\\sample_image_processing\\processed_images",
+  "draw_space": "processed",
+  "filter_mode": "auto",
+  "total_images": 9,
+  "processed_images": 9,
+  "skipped_images": 0,
+  "unreadable_images": 0,
+  "processed": [
+    {
+      "input": "demos\\sample_image_processing\\original_images\\bicycle.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\bicycle_annotated.jpg",
+      "infer_ms": 2110.01,
+      "display_filter": "auto:object:bicycle",
+      "objects": 1,
+      "displayed_objects": 1,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": null,
+      "displayed_hazard": null
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\car.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\car_annotated.jpg",
+      "infer_ms": 47.33,
+      "display_filter": "auto:object:car",
+      "objects": 3,
+      "displayed_objects": 3,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": null,
+      "displayed_hazard": null
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\curb.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\curb_annotated.jpg",
+      "infer_ms": 50.8,
+      "display_filter": "auto:hazard:curb",
+      "objects": 1,
+      "displayed_objects": 0,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": {
+        "type": "curb",
+        "conf": 0.4531,
+        "bbox": [
+          433.362060546875,
+          0.05523681640625,
+          639.63916015625,
+          144.87445068359375
+        ]
+      },
+      "displayed_hazard": {
+        "type": "curb",
+        "conf": 0.4531,
+        "bbox": [
+          433.362060546875,
+          0.05523681640625,
+          639.63916015625,
+          144.87445068359375
+        ]
+      }
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\pedestrain.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\pedestrain_annotated.jpg",
+      "infer_ms": 47.64,
+      "display_filter": "auto:object:pedestrian",
+      "objects": 6,
+      "displayed_objects": 6,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": null,
+      "displayed_hazard": null
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\pothole.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\pothole_annotated.jpg",
+      "infer_ms": 48.97,
+      "display_filter": "auto:hazard:pothole",
+      "objects": 1,
+      "displayed_objects": 0,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": {
+        "type": "pothole",
+        "conf": 0.9204,
+        "bbox": [
+          217.6493377685547,
+          227.48919677734375,
+          492.50616455078125,
+          388.35992431640625
+        ]
+      },
+      "displayed_hazard": {
+        "type": "pothole",
+        "conf": 0.9204,
+        "bbox": [
+          217.6493377685547,
+          227.48919677734375,
+          492.50616455078125,
+          388.35992431640625
+        ]
+      }
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\roadblock.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\roadblock_annotated.jpg",
+      "infer_ms": 59.73,
+      "display_filter": "auto:object:roadblock",
+      "objects": 1,
+      "displayed_objects": 1,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": null,
+      "displayed_hazard": null
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\scooter.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\scooter_annotated.jpg",
+      "infer_ms": 69.26,
+      "display_filter": "auto:object:scooter",
+      "objects": 5,
+      "displayed_objects": 5,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": null,
+      "displayed_hazard": null
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\sidewallk.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\sidewallk_annotated.jpg",
+      "infer_ms": 59.64,
+      "display_filter": "auto:laneseg",
+      "objects": 0,
+      "displayed_objects": 0,
+      "traffic_light": null,
+      "displayed_traffic_light": null,
+      "laneseg": {
+        "mask_id": 1,
+        "conf": 0.9246,
+        "bbox": [
+          0.5550537109375,
+          245.4805908203125,
+          638.2135009765625,
+          472.812255859375
+        ]
+      },
+      "displayed_laneseg": {
+        "mask_id": 1,
+        "conf": 0.9246,
+        "bbox": [
+          0.5550537109375,
+          245.4805908203125,
+          638.2135009765625,
+          472.812255859375
+        ]
+      },
+      "hazard": null,
+      "displayed_hazard": null
+    },
+    {
+      "input": "demos\\sample_image_processing\\original_images\\traffic_lights.jpg",
+      "output": "demos\\sample_image_processing\\processed_images\\traffic_lights_annotated.jpg",
+      "infer_ms": 48.16,
+      "display_filter": "auto:traffic_light",
+      "objects": 2,
+      "displayed_objects": 0,
+      "traffic_light": {
+        "state": "red",
+        "conf": 0.8763,
+        "bbox": [
+          46.4178466796875,
+          57.516998291015625,
+          192.10739135742188,
+          401.63848876953125
+        ]
+      },
+      "displayed_traffic_light": {
+        "state": "red",
+        "conf": 0.8763,
+        "bbox": [
+          46.4178466796875,
+          57.516998291015625,
+          192.10739135742188,
+          401.63848876953125
+        ]
+      },
+      "laneseg": null,
+      "displayed_laneseg": null,
+      "hazard": null,
+      "displayed_hazard": null
+    }
+  ],
+  "skipped": [],
+  "unreadable": []
+}
