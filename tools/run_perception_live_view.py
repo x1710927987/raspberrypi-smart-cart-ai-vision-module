@@ -55,6 +55,7 @@ def draw_perception_overlay(
     *,
     elapsed_ms: float | None = None,
     fps: float | None = None,
+    show_status_panel: bool = True,
 ) -> np.ndarray:
     annotated = frame.copy()
     height, width = annotated.shape[:2]
@@ -98,8 +99,9 @@ def draw_perception_overlay(
         cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 2)
         _draw_label(annotated, label, x1, y1, color)
 
-    status_lines = _status_lines(output, elapsed_ms=elapsed_ms, fps=fps)
-    _draw_status_panel(annotated, status_lines)
+    if show_status_panel:
+        status_lines = _status_lines(output, elapsed_ms=elapsed_ms, fps=fps)
+        _draw_status_panel(annotated, status_lines)
     return annotated
 
 
